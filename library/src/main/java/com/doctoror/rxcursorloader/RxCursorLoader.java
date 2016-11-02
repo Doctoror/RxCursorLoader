@@ -36,12 +36,13 @@ import rx.schedulers.Schedulers;
 
 /**
  * An RX replacement for {@link android.content.CursorLoader}
- * <p>
+ * <br>
+ * <br>
  * Usage:
- * <p>
+ * <br>
  * Create a {@link Query} using {@link Query.Builder}. The required parameter is only a content
  * URI.
- * <p><blockquote><pre>
+ * <br><blockquote><pre>
  * final CursorLoaderObservable.Query query = new CursorLoaderObservable.Query.Builder()
  *     .setContentUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI)
  *     .setProjection(new String[]{MediaStore.Audio.Media._ID})
@@ -54,22 +55,21 @@ import rx.schedulers.Schedulers;
  *
  * Use {@link #create(ContentResolver, Query)} to create new {@link RxCursorLoader} instance.
  * Do not lose {@link Subscription}, you will need it to unsubscribe.
- * <p><blockquote><pre>
+ * <br><blockquote><pre>
  * mCursorSubscription = CursorLoaderObservable.create(getContentResolver(), query)
- *     .subscribe(cursor -> mAdapter.swapCursor(cursor));
+ *     .subscribe(cursor -&gt; mAdapter.swapCursor(cursor));
  * </pre></blockquote>
  *
  * When the Cursor is loaded, it is passed to {@link Observer#onNext(Object)}} (can be null).
  * Every time the content changes, the Cursor will be reloaded and passed to {@link
- * Observer#onNext(Object)}}.
- * <p>
- * {@link Observer#onCompleted()}} and {@link Observer#onError(Throwable)}} are never called.
- * <p>
- * <b>You must call {@link Subscriber#unsubscribe()} when finished.</b> Do not use
+ * Observer#onNext(Object)}}. {@link Observer#onCompleted()}} and {@link
+ * Observer#onError(Throwable)}} are never called.
+ * <br>
+ * <br><b>You must call {@link Subscriber#unsubscribe()} when finished.</b> Do not use
  * com.trello.rxlifecycle as it does not call unsubscribe. Cursor is automatically closed on
  * unsubscribe so make sure nothing is using Cursor or else you may get a RuntimeException
  *
- * <p><blockquote><pre>
+ * <br><blockquote><pre>
  * protected void onStop() {
  *     super.onStop();
  *     // stop using Cursor
