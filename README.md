@@ -1,7 +1,8 @@
 ##Description
 
+An RX replacement for [android.content.CursorLoader](https://developer.android.com/reference/android/content/CursorLoader.html)
+
 Min API level 9
-An RX replacement for {@link android.content.CursorLoader}
 
 ## Usage
 
