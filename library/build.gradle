@@ -1,0 +1,53 @@
+apply plugin: 'com.android.library'
+apply plugin: 'me.tatarka.retrolambda'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "24.0.3"
+
+    defaultConfig {
+        minSdkVersion 9
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+
+    lintOptions {
+        checkAllWarnings true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    buildTypes {
+        release {
+        }
+    }
+
+    task grantPermissions(type: Exec, dependsOn: 'installDebugAndroidTest') {
+        executable "sh"
+        args "-c", "\$ANDROID_HOME/platform-tools/adb shell pm grant com.doctoror.cursorloaderobservable.test android.permission.READ_EXTERNAL_STORAGE"
+    }
+
+    tasks.whenTaskAdded { task ->
+        if (task.name.startsWith('connectedDebugAndroidTest')) {
+            task.dependsOn grantPermissions
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+
+    compile 'com.android.support:support-annotations:25.0.0'
+    compile 'io.reactivex:rxjava:1.2.1'
+    compile 'io.reactivex:rxandroid:1.2.1'
+}
