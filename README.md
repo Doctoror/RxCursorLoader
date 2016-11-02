@@ -4,6 +4,14 @@ An RX replacement for [android.content.CursorLoader](https://developer.android.c
 
 Min API level 9
 
+##Setup
+
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.doctoror.rxcursorloader/library/badge.png?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.doctoror.rxcursorloader/library)
+
+```groovy
+compile 'com.github.doctoror.rxcursorloader:library:1.0.1'
+```
+
 ## Usage
 
 Create a Query using Query.Builder. The required parameter is only a content URI.
