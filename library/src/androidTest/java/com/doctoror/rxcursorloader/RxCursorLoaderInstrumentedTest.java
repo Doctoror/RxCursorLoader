@@ -18,6 +18,7 @@ package com.doctoror.rxcursorloader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import android.os.Parcel;
 import android.provider.MediaStore;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
@@ -74,5 +75,25 @@ public final class RxCursorLoaderInstrumentedTest {
         //noinspection ConstantConditions
         RxCursorLoader.create(InstrumentationRegistry.getTargetContext()
                 .getContentResolver(), null);
+    }
+
+    @Test
+    public void testQueryParcelable() throws Exception {
+        final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
+                .setContentUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI)
+                .setProjection(new String[]{MediaStore.Audio.Media._ID})
+                .setSortOrder(MediaStore.Audio.Artists.ARTIST)
+                .setSelection(MediaStore.Audio.Artists.ARTIST + "=?")
+                .setSelectionArgs(new String[] {"Oh Long Johnson"})
+                .create();
+
+        final Parcel parcel = Parcel.obtain();
+        query.writeToParcel(parcel, 0);
+
+        parcel.setDataPosition(0);
+
+        final RxCursorLoader.Query fromParcel = RxCursorLoader.Query.CREATOR
+                .createFromParcel(parcel);
+        assertEquals(query, fromParcel);
     }
 }
