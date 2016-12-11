@@ -53,6 +53,12 @@ protected void onStop() {
 }
 ```
 
+If you need to load once, use asObservable().take(1), this way you don't need to unsubscribe
+
+```java
+RxCursorLoader.create(resolver, query).asObservable().take(1).subscribe(this::handleCursor);
+```
+
 ##License
 
 ```
