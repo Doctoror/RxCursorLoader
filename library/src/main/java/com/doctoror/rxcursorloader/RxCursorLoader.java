@@ -30,9 +30,11 @@ import java.util.Arrays;
 
 import rx.Observable;
 import rx.Observer;
+import rx.Scheduler;
 import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
@@ -93,7 +95,7 @@ public final class RxCursorLoader {
      */
     public static boolean LOG = false;
 
-    private final Observable<Cursor> mObservable;
+    private Observable<Cursor> mObservable;
     private final CursorLoaderOnSubscribe mOnSubscribe;
 
     private RxCursorLoader(@NonNull final Observable<Cursor> observable,
@@ -110,6 +112,45 @@ public final class RxCursorLoader {
     @NonNull
     public final Subscription subscribe(final Action1<? super Cursor> action1) {
         return mObservable.subscribe(action1);
+    }
+
+    @NonNull
+    public final Subscription subscribe(final Action1<? super Cursor> onNext,
+            final Action1<Throwable> onError) {
+        return mObservable.subscribe(onNext, onError);
+    }
+
+    @NonNull
+    public final Subscription subscribe(final Action1<? super Cursor> onNext,
+            final Action1<Throwable> onError, final Action0 onCompleted) {
+        return mObservable.subscribe(onNext, onError, onCompleted);
+    }
+
+    @NonNull
+    public final Subscription subscribe(Subscriber<? super Cursor> subscriber) {
+        return mObservable.subscribe(subscriber);
+    }
+
+    @NonNull
+    public final RxCursorLoader subscribeOn(Scheduler scheduler) {
+        mObservable = mObservable.subscribeOn(scheduler);
+        return this;
+    }
+
+    @NonNull
+    public final RxCursorLoader observeOn(Scheduler scheduler) {
+        mObservable = mObservable.observeOn(scheduler);
+        return this;
+    }
+
+    /**
+     * Returns wrapped {@link Observable}. Use this if you don't need {@link
+     * #reloadWithNewQuery(Query)}
+     *
+     * @return wrapped {@link Observable}
+     */
+    public final Observable<Cursor> asObservable() {
+        return mObservable;
     }
 
     /**
@@ -142,9 +183,10 @@ public final class RxCursorLoader {
         final CursorLoaderOnSubscribe onSubscribe = new CursorLoaderOnSubscribe(resolver, query);
         final Observable<Cursor> observable = Observable.create(onSubscribe)
                 .doOnUnsubscribe(onSubscribe::release)
+                .doOnCompleted(onSubscribe::release)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext((c) -> onSubscribe.closePreviousCursor());
+                .doOnNext(c -> onSubscribe.closePreviousCursor());
         return new RxCursorLoader(observable, onSubscribe);
     }
 

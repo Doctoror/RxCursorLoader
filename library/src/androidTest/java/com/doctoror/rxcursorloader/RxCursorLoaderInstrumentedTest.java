@@ -18,14 +18,19 @@ package com.doctoror.rxcursorloader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import android.database.Cursor;
+import android.os.Looper;
 import android.os.Parcel;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
 import java.util.concurrent.CountDownLatch;
 
 import rx.Subscription;
+import rx.schedulers.Schedulers;
 
 import static org.junit.Assert.*;
 
@@ -48,12 +53,28 @@ public final class RxCursorLoaderInstrumentedTest {
         final RxCursorLoader o = RxCursorLoader.create(
                 InstrumentationRegistry.getTargetContext().getContentResolver(), query);
         final Subscription s = o.subscribe(cursor -> {
-            // Well it can be null if your MediaStore is fucked up, but we do not consider this option
-            assertNotNull(cursor);
+            testValidCursor(cursor);
             cdl.countDown();
         });
         cdl.await();
         s.unsubscribe();
+    }
+
+    private void testValidCursor(@Nullable final Cursor c) {
+        // Well it can be null if your MediaStore is fucked up, but we do not consider this option
+        assertNotNull(c);
+
+        // Test if can query after 1 sec (not closed while onNext())
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Test if can read
+        if (c.moveToFirst()) {
+            c.getLong(0);
+        }
     }
 
     @Test(expected = IllegalStateException.class)
@@ -84,7 +105,7 @@ public final class RxCursorLoaderInstrumentedTest {
                 .setProjection(new String[]{MediaStore.Audio.Media._ID})
                 .setSortOrder(MediaStore.Audio.Artists.ARTIST)
                 .setSelection(MediaStore.Audio.Artists.ARTIST + "=?")
-                .setSelectionArgs(new String[] {"Oh Long Johnson"})
+                .setSelectionArgs(new String[]{"Oh Long Johnson"})
                 .create();
 
         final Parcel parcel = Parcel.obtain();
@@ -95,5 +116,74 @@ public final class RxCursorLoaderInstrumentedTest {
         final RxCursorLoader.Query fromParcel = RxCursorLoader.Query.CREATOR
                 .createFromParcel(parcel);
         assertEquals(query, fromParcel);
+    }
+
+    @Test
+    public void testSchedulers() throws Exception {
+        final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
+                .setContentUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI)
+                .setProjection(new String[]{MediaStore.Audio.Media._ID})
+                .create();
+
+        final CountDownLatch cdl = new CountDownLatch(1);
+        RxCursorLoader.create(InstrumentationRegistry.getTargetContext()
+                .getContentResolver(), query)
+                .subscribeOn(Schedulers.computation())
+                .observeOn(Schedulers.io())
+                .subscribe(c -> {
+                    assertNotEquals(Looper.getMainLooper(), Looper.myLooper());
+                    testValidCursor(c);
+                    cdl.countDown();
+                });
+        cdl.await();
+    }
+
+    @Test
+    public void testAsObservableSingle() throws Exception {
+        final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
+                .setContentUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI)
+                .setProjection(new String[]{MediaStore.Audio.Media._ID})
+                .create();
+
+        final CountDownLatch cdl = new CountDownLatch(1);
+        RxCursorLoader.create(InstrumentationRegistry.getTargetContext()
+                .getContentResolver(), query).asObservable().take(1).single().subscribe(c -> {
+            testValidCursor(c);
+            cdl.countDown();
+        });
+        cdl.await();
+    }
+
+    @Test
+    public void testAsObservableTake() throws Exception {
+        final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
+                .setContentUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI)
+                .setProjection(new String[]{MediaStore.Audio.Media._ID})
+                .create();
+
+        final CountDownLatch cdl = new CountDownLatch(1);
+        RxCursorLoader.create(InstrumentationRegistry.getTargetContext()
+                .getContentResolver(), query).asObservable().take(1).subscribe(c -> {
+            testValidCursor(c);
+            cdl.countDown();
+        });
+        cdl.await();
+    }
+
+    @Test
+    public void testAsObservableWithMap() throws Exception {
+        final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
+                .setContentUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI)
+                .setProjection(new String[]{MediaStore.Audio.Media._ID})
+                .create();
+
+        final CountDownLatch cdl = new CountDownLatch(1);
+        RxCursorLoader.create(InstrumentationRegistry.getTargetContext()
+                .getContentResolver(), query).asObservable()
+                .map(c -> new Object())
+                .subscribe(o -> {
+            cdl.countDown();
+        });
+        cdl.await();
     }
 }
