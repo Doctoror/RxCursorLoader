@@ -42,13 +42,13 @@ import rx.schedulers.Schedulers;
 
 /**
  * An RX replacement for {@link android.content.CursorLoader}
- * <br/>
- * <br/>
+ * <br>
+ * <br>
  * Usage:
- * <br/>
+ * <br>
  * Create a {@link Query} using {@link Query.Builder}. The required parameter is only a content
  * URI.
- * <br/><blockquote><pre>
+ * <br><blockquote><pre>
  * final CursorLoaderObservable.Query query = new CursorLoaderObservable.Query.Builder()
  *     .setContentUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI)
  *     .setProjection(new String[]{MediaStore.Audio.Media._ID})
@@ -62,14 +62,14 @@ import rx.schedulers.Schedulers;
  * If you need to load only once, use {@link #single(ContentResolver, Query)}. Note that this does
  * not apply schedulers for you, so make sure this is called from background thread or apply your
  * schdulers.
- * <br/><br/>
+ * <br><br>
  * If you need the loader to register ContentObserver and reload cursor passing it to onNext()
  * every
  * time content changes, use {@link #create(ContentResolver, Query)}. This returns the
  * {@link RxCursorLoader} that manages reloading {@link Cursor} just like
  * {@link android.content.CursorLoader}. Do not lose {@link Subscription}, you will need it to
  * unsubscribe.
- * <br/><blockquote><pre>
+ * <br><blockquote><pre>
  * mCursorSubscription = CursorLoaderObservable.create(getContentResolver(), query)
  *     .subscribe(cursor -&gt; mAdapter.swapCursor(cursor));
  * </pre></blockquote>
@@ -78,12 +78,12 @@ import rx.schedulers.Schedulers;
  * Every time the content changes, the Cursor will be reloaded and passed to {@link
  * Observer#onNext(Object)}}. {@link Observer#onCompleted()}} and {@link
  * Observer#onError(Throwable)}} are never called.
- * <br/>
- * <br/><b>You must call {@link Subscriber#unsubscribe()} when finished.</b> Do not use
+ * <br>
+ * <br><b>You must call {@link Subscriber#unsubscribe()} when finished.</b> Do not use
  * com.trello.rxlifecycle as it does not call unsubscribe. Cursor is automatically closed on
  * unsubscribe so make sure nothing is using Cursor or else you may get a RuntimeException
  *
- * <br/><blockquote><pre>
+ * <br><blockquote><pre>
  * protected void onStop() {
  *     super.onStop();
  *     // stop using Cursor
