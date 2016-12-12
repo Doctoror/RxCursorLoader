@@ -31,6 +31,8 @@ import java.util.Arrays;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;
+import rx.Single;
+import rx.SingleSubscriber;
 import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -40,13 +42,13 @@ import rx.schedulers.Schedulers;
 
 /**
  * An RX replacement for {@link android.content.CursorLoader}
- * <br>
- * <br>
+ * <br/>
+ * <br/>
  * Usage:
- * <br>
+ * <br/>
  * Create a {@link Query} using {@link Query.Builder}. The required parameter is only a content
  * URI.
- * <br><blockquote><pre>
+ * <br/><blockquote><pre>
  * final CursorLoaderObservable.Query query = new CursorLoaderObservable.Query.Builder()
  *     .setContentUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI)
  *     .setProjection(new String[]{MediaStore.Audio.Media._ID})
@@ -57,9 +59,17 @@ import rx.schedulers.Schedulers;
  * }
  * </pre></blockquote>
  *
- * Use {@link #create(ContentResolver, Query)} to create new {@link RxCursorLoader} instance.
- * Do not lose {@link Subscription}, you will need it to unsubscribe.
- * <br><blockquote><pre>
+ * If you need to load only once, use {@link #single(ContentResolver, Query)}. Note that this does
+ * not apply schedulers for you, so make sure this is called from background thread or apply your
+ * schdulers.
+ * <br/><br/>
+ * If you need the loader to register ContentObserver and reload cursor passing it to onNext()
+ * every
+ * time content changes, use {@link #create(ContentResolver, Query)}. This returns the
+ * {@link RxCursorLoader} that manages reloading {@link Cursor} just like
+ * {@link android.content.CursorLoader}. Do not lose {@link Subscription}, you will need it to
+ * unsubscribe.
+ * <br/><blockquote><pre>
  * mCursorSubscription = CursorLoaderObservable.create(getContentResolver(), query)
  *     .subscribe(cursor -&gt; mAdapter.swapCursor(cursor));
  * </pre></blockquote>
@@ -68,12 +78,12 @@ import rx.schedulers.Schedulers;
  * Every time the content changes, the Cursor will be reloaded and passed to {@link
  * Observer#onNext(Object)}}. {@link Observer#onCompleted()}} and {@link
  * Observer#onError(Throwable)}} are never called.
- * <br>
- * <br><b>You must call {@link Subscriber#unsubscribe()} when finished.</b> Do not use
+ * <br/>
+ * <br/><b>You must call {@link Subscriber#unsubscribe()} when finished.</b> Do not use
  * com.trello.rxlifecycle as it does not call unsubscribe. Cursor is automatically closed on
  * unsubscribe so make sure nothing is using Cursor or else you may get a RuntimeException
  *
- * <br><blockquote><pre>
+ * <br/><blockquote><pre>
  * protected void onStop() {
  *     super.onStop();
  *     // stop using Cursor
@@ -188,6 +198,31 @@ public final class RxCursorLoader {
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(c -> onSubscribe.closePreviousCursor());
         return new RxCursorLoader(observable, onSubscribe);
+    }
+
+    /**
+     * Create a new {@link Single} that loads {@link Cursor} once and does not close it.
+     * Does not apply any schedulers. Calls {@link SingleSubscriber#onSuccess(Object)} once loading
+     * finished. Does not call {@link SingleSubscriber#onError(Throwable)}. If the
+     * {@link ContentResolver} query returns null, null will be passed to onSuccess().
+     *
+     * @param resolver {@link ContentResolver} to use
+     * @param query    the {@link Query} to use
+     * @return new {@link RxCursorLoader} instance.
+     */
+    @NonNull
+    public static Single<Cursor> single(@NonNull final ContentResolver resolver,
+            @NonNull final Query query) {
+        //noinspection ConstantConditions
+        if (resolver == null) {
+            throw new NullPointerException("ContentResolver param must not be null");
+        }
+        //noinspection ConstantConditions
+        if (query == null) {
+            throw new NullPointerException("Params param must not be null");
+        }
+
+        return Single.create(new CursorLoaderOnSubscribeSingle(resolver, query));
     }
 
     private static final class CursorLoaderOnSubscribe
@@ -306,6 +341,38 @@ public final class RxCursorLoader {
         }
     }
 
+    private static final class CursorLoaderOnSubscribeSingle
+            implements Single.OnSubscribe<Cursor> {
+
+        @NonNull
+        private final ContentResolver mContentResolver;
+
+        @NonNull
+        private final Query mQuery;
+
+        CursorLoaderOnSubscribeSingle(@NonNull final ContentResolver resolver,
+                @NonNull final Query query) {
+            mContentResolver = resolver;
+            mQuery = query;
+        }
+
+        @Override
+        public void call(final SingleSubscriber<? super Cursor> singleSubscriber) {
+            if (LOG) {
+                Log.d(TAG, mQuery.toString());
+            }
+
+            final Cursor c = mContentResolver.query(
+                    mQuery.contentUri,
+                    mQuery.projection,
+                    mQuery.selection,
+                    mQuery.selectionArgs,
+                    mQuery.sortOrder);
+
+            singleSubscriber.onSuccess(c);
+        }
+    }
+
     /**
      * Parameters for {@link RxCursorLoader}
      */
@@ -367,6 +434,7 @@ public final class RxCursorLoader {
                 return false;
             }
             // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            //noinspection SimplifiableIfStatement
             if (!Arrays.equals(selectionArgs, query.selectionArgs)) {
                 return false;
             }

@@ -146,9 +146,10 @@ public final class RxCursorLoaderInstrumentedTest {
                 .create();
 
         final CountDownLatch cdl = new CountDownLatch(1);
-        RxCursorLoader.create(InstrumentationRegistry.getTargetContext()
-                .getContentResolver(), query).asObservable().take(1).single().subscribe(c -> {
+        RxCursorLoader.single(InstrumentationRegistry.getTargetContext()
+                .getContentResolver(), query).subscribe(c -> {
             testValidCursor(c);
+            c.close();
             cdl.countDown();
         });
         cdl.await();
