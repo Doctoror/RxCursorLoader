@@ -9,7 +9,7 @@ Min API level 9
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.doctoror.rxcursorloader/library/badge.png?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.doctoror.rxcursorloader/library)
 
 ```groovy
-compile 'com.github.doctoror.rxcursorloader:library:1.0.2'
+compile 'com.github.doctoror.rxcursorloader:library:[version]'
 ```
 
 ## Usage
