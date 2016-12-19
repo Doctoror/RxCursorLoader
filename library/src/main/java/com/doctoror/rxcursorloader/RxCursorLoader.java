@@ -228,11 +228,15 @@ public final class RxCursorLoader {
     private static final class CursorLoaderOnSubscribe
             implements Observable.OnSubscribe<Cursor> {
 
+        private final Object mLock = new Object();
+
         @NonNull
         private final ContentResolver mContentResolver;
 
         @NonNull
         private Query mQuery;
+
+        private Handler mHandler;
 
         private Subscriber<? super Cursor> mSubscriber;
 
@@ -249,35 +253,49 @@ public final class RxCursorLoader {
 
         @Override
         public void call(final Subscriber<? super Cursor> subscriber) {
-            mSubscriber = subscriber;
+            final HandlerThread handlerThread = new HandlerThread(
+                    "RxCursorLoader.ContentObserver");
+            handlerThread.start();
+            synchronized (mLock) {
+                mHandler = new Handler(handlerThread.getLooper());
+                mSubscriber = subscriber;
+            }
             reload();
         }
 
         void closePreviousCursor() {
-            if (mPrevious != null) {
-                mPrevious.close();
-                mPrevious = null;
+            synchronized (mLock) {
+                if (mPrevious != null) {
+                    mPrevious.close();
+                    mPrevious = null;
+                }
             }
         }
 
         private void release() {
-            if (mCursor != null) {
-                if (mResolverObserver != null) {
-                    mCursor.unregisterContentObserver(mResolverObserver);
+            synchronized (mLock) {
+                if (mCursor != null) {
+                    if (mResolverObserver != null) {
+                        mCursor.unregisterContentObserver(mResolverObserver);
+                    }
+                    mCursor.close();
+                    mCursor = null;
                 }
-                mCursor.close();
-                mCursor = null;
+                if (mPrevious != null) {
+                    mPrevious.close();
+                    mPrevious = null;
+                }
+                mSubscriber = null;
             }
-            if (mPrevious != null) {
-                mPrevious.close();
-                mPrevious = null;
-            }
-            mSubscriber = null;
         }
 
         void reloadWithNewQuery(@NonNull final Query query) {
-            mQuery = query;
-            reload();
+            synchronized (mLock) {
+                mQuery = query;
+                if (mHandler != null) {
+                    mHandler.post(this::reload);
+                }
+            }
         }
 
         /**
@@ -287,32 +305,34 @@ public final class RxCursorLoader {
          * This must be called from {@link #call(Subscriber)} thread
          */
         private synchronized void reload() {
-            final Cursor old = mCursor;
-            if (old != null && mResolverObserver != null) {
-                old.unregisterContentObserver(mResolverObserver);
-            }
+            synchronized (mLock) {
+                final Cursor old = mCursor;
+                if (old != null && mResolverObserver != null) {
+                    old.unregisterContentObserver(mResolverObserver);
+                }
 
-            if (LOG) {
-                Log.d(TAG, mQuery.toString());
-            }
+                if (LOG) {
+                    Log.d(TAG, mQuery.toString());
+                }
 
-            final Cursor c = mContentResolver.query(
-                    mQuery.contentUri,
-                    mQuery.projection,
-                    mQuery.selection,
-                    mQuery.selectionArgs,
-                    mQuery.sortOrder);
+                final Cursor c = mContentResolver.query(
+                        mQuery.contentUri,
+                        mQuery.projection,
+                        mQuery.selection,
+                        mQuery.selectionArgs,
+                        mQuery.sortOrder);
 
-            mCursor = c;
-            if (old != c) {
-                mPrevious = old;
-            }
+                mCursor = c;
+                if (old != c) {
+                    mPrevious = old;
+                }
 
-            if (c != null) {
-                c.registerContentObserver(getResolverObserver());
-            }
-            if (mSubscriber != null) {
-                mSubscriber.onNext(c);
+                if (c != null) {
+                    c.registerContentObserver(getResolverObserver());
+                }
+                if (mSubscriber != null) {
+                    mSubscriber.onNext(c);
+                }
             }
         }
 
@@ -325,10 +345,7 @@ public final class RxCursorLoader {
         @NonNull
         private ContentObserver getResolverObserver() {
             if (mResolverObserver == null) {
-                final HandlerThread handlerThread = new HandlerThread(
-                        "RxCursorLoader.ContentObserver");
-                handlerThread.start();
-                mResolverObserver = new ContentObserver(new Handler(handlerThread.getLooper())) {
+                mResolverObserver = new ContentObserver(mHandler) {
 
                     @Override
                     public void onChange(final boolean selfChange) {
