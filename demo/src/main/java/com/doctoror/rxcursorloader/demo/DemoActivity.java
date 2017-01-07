@@ -31,6 +31,8 @@ import android.widget.ViewAnimator;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 public final class DemoActivity extends Activity {
 
@@ -92,7 +94,10 @@ public final class DemoActivity extends Activity {
 
     private void subscribe() {
         mCursorSubscription = RxCursorLoader.create(getContentResolver(),
-                ArtistsQuery.mQuery).subscribe(cursor -> {
+                ArtistsQuery.mQuery)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(cursor -> {
             if (mAdapter == null) {
                 mAdapter = new ArtistsCursorAdapter(DemoActivity.this, cursor);
                 mListView.setAdapter(mAdapter);
