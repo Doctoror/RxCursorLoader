@@ -30,15 +30,10 @@ import java.util.Arrays;
 
 import rx.Observable;
 import rx.Observer;
-import rx.Scheduler;
 import rx.Single;
 import rx.SingleSubscriber;
 import rx.Subscriber;
 import rx.Subscription;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.schedulers.Schedulers;
 
 /**
  * An RX replacement for {@link android.content.CursorLoader}
@@ -49,7 +44,7 @@ import rx.schedulers.Schedulers;
  * Create a {@link Query} using {@link Query.Builder}. The required parameter is only a content
  * URI.
  * <br><blockquote><pre>
- * final CursorLoaderObservable.Query query = new CursorLoaderObservable.Query.Builder()
+ * final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
  *     .setContentUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI)
  *     .setProjection(new String[]{MediaStore.Audio.Media._ID})
  *     .setSortOrder(MediaStore.Audio.Artists.ARTIST)
@@ -70,7 +65,7 @@ import rx.schedulers.Schedulers;
  * {@link android.content.CursorLoader}. Do not lose {@link Subscription}, you will need it to
  * unsubscribe.
  * <br><blockquote><pre>
- * mCursorSubscription = CursorLoaderObservable.create(getContentResolver(), query)
+ * mCursorSubscription = RxCursorLoader.create(getContentResolver(), query)
  *     .subscribe(cursor -&gt; mAdapter.swapCursor(cursor));
  * </pre></blockquote>
  *
@@ -92,9 +87,6 @@ import rx.schedulers.Schedulers;
  *     mCursorSubscription.unsubscribe();
  * }
  * </pre></blockquote>
- *
- * You may call {@link #reloadWithNewQuery(Query)} if your query changes (for example, if user
- * changes search filter).
  */
 public final class RxCursorLoader {
 
@@ -105,82 +97,19 @@ public final class RxCursorLoader {
      */
     public static boolean LOG = false;
 
-    private Observable<Cursor> mObservable;
-    private final CursorLoaderOnSubscribe mOnSubscribe;
-
-    private RxCursorLoader(@NonNull final Observable<Cursor> observable,
-            @NonNull final CursorLoaderOnSubscribe onSubscribe) {
-        mObservable = observable;
-        mOnSubscribe = onSubscribe;
-    }
-
-    @NonNull
-    public final Subscription subscribe(final Observer<? super Cursor> observer) {
-        return mObservable.subscribe(observer);
-    }
-
-    @NonNull
-    public final Subscription subscribe(final Action1<? super Cursor> action1) {
-        return mObservable.subscribe(action1);
-    }
-
-    @NonNull
-    public final Subscription subscribe(final Action1<? super Cursor> onNext,
-            final Action1<Throwable> onError) {
-        return mObservable.subscribe(onNext, onError);
-    }
-
-    @NonNull
-    public final Subscription subscribe(final Action1<? super Cursor> onNext,
-            final Action1<Throwable> onError, final Action0 onCompleted) {
-        return mObservable.subscribe(onNext, onError, onCompleted);
-    }
-
-    @NonNull
-    public final Subscription subscribe(Subscriber<? super Cursor> subscriber) {
-        return mObservable.subscribe(subscriber);
-    }
-
-    @NonNull
-    public final RxCursorLoader subscribeOn(Scheduler scheduler) {
-        mObservable = mObservable.subscribeOn(scheduler);
-        return this;
-    }
-
-    @NonNull
-    public final RxCursorLoader observeOn(Scheduler scheduler) {
-        mObservable = mObservable.observeOn(scheduler);
-        return this;
+    private RxCursorLoader() {
+        throw new UnsupportedOperationException();
     }
 
     /**
-     * Returns wrapped {@link Observable}. Use this if you don't need {@link
-     * #reloadWithNewQuery(Query)}
-     *
-     * @return wrapped {@link Observable}
-     */
-    public final Observable<Cursor> asObservable() {
-        return mObservable;
-    }
-
-    /**
-     * Changes {@link Query} and reloads
-     *
-     * @param query the new Query
-     */
-    public void reloadWithNewQuery(@NonNull final Query query) {
-        mOnSubscribe.reloadWithNewQuery(query);
-    }
-
-    /**
-     * Create a new {@link RxCursorLoader} instance.
+     * Create a new {@link Observable} that emits items from a {@link ContentResolver} query.
      *
      * @param resolver {@link ContentResolver} to use
      * @param query    the {@link Query} to use
      * @return new {@link RxCursorLoader} instance.
      */
     @NonNull
-    public static RxCursorLoader create(@NonNull final ContentResolver resolver,
+    public static Observable<Cursor> create(@NonNull final ContentResolver resolver,
             @NonNull final Query query) {
         //noinspection ConstantConditions
         if (resolver == null) {
@@ -191,13 +120,10 @@ public final class RxCursorLoader {
             throw new NullPointerException("Params param must not be null");
         }
         final CursorLoaderOnSubscribe onSubscribe = new CursorLoaderOnSubscribe(resolver, query);
-        final Observable<Cursor> observable = Observable.create(onSubscribe)
+        return Observable.create(onSubscribe)
                 .doOnUnsubscribe(onSubscribe::release)
                 .doOnCompleted(onSubscribe::release)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(c -> onSubscribe.closePreviousCursor());
-        return new RxCursorLoader(observable, onSubscribe);
     }
 
     /**
@@ -234,7 +160,7 @@ public final class RxCursorLoader {
         private final ContentResolver mContentResolver;
 
         @NonNull
-        private Query mQuery;
+        private final Query mQuery;
 
         private Handler mHandler;
 
@@ -286,15 +212,6 @@ public final class RxCursorLoader {
                     mPrevious = null;
                 }
                 mSubscriber = null;
-            }
-        }
-
-        void reloadWithNewQuery(@NonNull final Query query) {
-            synchronized (mLock) {
-                mQuery = query;
-                if (mHandler != null) {
-                    mHandler.post(this::reload);
-                }
             }
         }
 

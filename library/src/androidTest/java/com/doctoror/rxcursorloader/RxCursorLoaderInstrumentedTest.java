@@ -22,13 +22,13 @@ import android.database.Cursor;
 import android.os.Looper;
 import android.os.Parcel;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
 import java.util.concurrent.CountDownLatch;
 
+import rx.Observable;
 import rx.Subscription;
 import rx.schedulers.Schedulers;
 
@@ -50,7 +50,7 @@ public final class RxCursorLoaderInstrumentedTest {
                 .create();
 
         final CountDownLatch cdl = new CountDownLatch(1);
-        final RxCursorLoader o = RxCursorLoader.create(
+        final Observable<Cursor> o = RxCursorLoader.create(
                 InstrumentationRegistry.getTargetContext().getContentResolver(), query);
         final Subscription s = o.subscribe(cursor -> {
             testValidCursor(cursor);
@@ -139,7 +139,7 @@ public final class RxCursorLoaderInstrumentedTest {
     }
 
     @Test
-    public void testAsObservableSingle() throws Exception {
+    public void testAsSingle() throws Exception {
         final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
                 .setContentUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI)
                 .setProjection(new String[]{MediaStore.Audio.Media._ID})
@@ -156,7 +156,7 @@ public final class RxCursorLoaderInstrumentedTest {
     }
 
     @Test
-    public void testAsObservableTake() throws Exception {
+    public void testTake() throws Exception {
         final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
                 .setContentUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI)
                 .setProjection(new String[]{MediaStore.Audio.Media._ID})
@@ -164,7 +164,7 @@ public final class RxCursorLoaderInstrumentedTest {
 
         final CountDownLatch cdl = new CountDownLatch(1);
         RxCursorLoader.create(InstrumentationRegistry.getTargetContext()
-                .getContentResolver(), query).asObservable().take(1).subscribe(c -> {
+                .getContentResolver(), query).take(1).subscribe(c -> {
             testValidCursor(c);
             cdl.countDown();
         });
@@ -180,7 +180,7 @@ public final class RxCursorLoaderInstrumentedTest {
 
         final CountDownLatch cdl = new CountDownLatch(1);
         RxCursorLoader.create(InstrumentationRegistry.getTargetContext()
-                .getContentResolver(), query).asObservable()
+                .getContentResolver(), query)
                 .map(c -> new Object())
                 .subscribe(o -> {
             cdl.countDown();

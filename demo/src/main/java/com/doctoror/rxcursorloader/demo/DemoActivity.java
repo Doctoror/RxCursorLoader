@@ -62,7 +62,7 @@ public final class DemoActivity extends Activity {
     protected void onStart() {
         super.onStart();
         mAnimator.setDisplayedChild(ANIMATOR_CHILD_PROGRESS);
-        RxPermissions.getInstance(this)
+        new RxPermissions(this)
                 .request(externalStoragePermission())
                 .subscribe(granted -> {
                     if (granted) {
