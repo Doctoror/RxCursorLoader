@@ -15,6 +15,7 @@
  */
 package com.doctoror.rxcursorloader;
 
+import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.database.ContentObserver;
 import android.database.Cursor;
@@ -33,7 +34,6 @@ import rx.Observer;
 import rx.Single;
 import rx.SingleSubscriber;
 import rx.Subscriber;
-import rx.Subscription;
 
 /**
  * An RX replacement for {@link android.content.CursorLoader}
@@ -54,39 +54,11 @@ import rx.Subscription;
  * }
  * </pre></blockquote>
  *
- * If you need to load only once, use {@link #single(ContentResolver, Query)}. Note that this does
- * not apply schedulers for you, so make sure this is called from background thread or apply your
- * schdulers.
+ * If you need to load only once, use {@link #single(ContentResolver, Query)}.
  * <br><br>
  * If you need the loader to register ContentObserver and reload cursor passing it to onNext()
- * every
- * time content changes, use {@link #create(ContentResolver, Query)}. This returns the
- * {@link RxCursorLoader} that manages reloading {@link Cursor} just like
- * {@link android.content.CursorLoader}. Do not lose {@link Subscription}, you will need it to
- * unsubscribe.
- * <br><blockquote><pre>
- * mCursorSubscription = RxCursorLoader.create(getContentResolver(), query)
- *     .subscribe(cursor -&gt; mAdapter.swapCursor(cursor));
- * </pre></blockquote>
- *
- * When the Cursor is loaded, it is passed to {@link Observer#onNext(Object)}} (can be null).
- * Every time the content changes, the Cursor will be reloaded and passed to {@link
- * Observer#onNext(Object)}}. {@link Observer#onCompleted()}} and {@link
- * Observer#onError(Throwable)}} are never called.
- * <br>
- * <br><b>You must call {@link Subscriber#unsubscribe()} when finished.</b> Do not use
- * com.trello.rxlifecycle as it does not call unsubscribe. Cursor is automatically closed on
- * unsubscribe so make sure nothing is using Cursor or else you may get a RuntimeException
- *
- * <br><blockquote><pre>
- * protected void onStop() {
- *     super.onStop();
- *     // stop using Cursor
- *     mAdapter.swapCursor(null);
- *     // Unsubscribe to close the Cursor and stop monitoring for ContentObserver changes
- *     mCursorSubscription.unsubscribe();
- * }
- * </pre></blockquote>
+ * every time content changes, like {@link android.content.CursorLoader}, use
+ * {@link #create(ContentResolver, Query)}.
  */
 public final class RxCursorLoader {
 
@@ -103,6 +75,28 @@ public final class RxCursorLoader {
 
     /**
      * Create a new {@link Observable} that emits items from a {@link ContentResolver} query.
+     * This acts like {@link android.content.CursorLoader}.<br>
+     * When the Cursor is loaded, it is passed to {@link Observer#onNext(Object)}} (will be null if
+     * {@link ContentProvider} returns null).
+     * <br>
+     * Every time the content changes, the Cursor will be reloaded and passed to {@link
+     * Observer#onNext(Object)}.
+     * <br>
+     * {@link Observer#onCompleted()}} and {@link Observer#onError(Throwable)}} are never called.
+     * <br>
+     * <br><b>You must call {@link Subscriber#unsubscribe()} when finished.</b> Do not use
+     * com.trello.rxlifecycle as it does not call unsubscribe. Cursor is automatically closed on
+     * unsubscribe so make sure nothing is using Cursor or else you may get a RuntimeException
+     *
+     * <br><blockquote><pre>
+     * protected void onStop() {
+     *     super.onStop();
+     *     // stop using Cursor
+     *     mAdapter.swapCursor(null);
+     *     // Unsubscribe to close the Cursor and stop monitoring for ContentObserver changes
+     *     mCursorSubscription.unsubscribe();
+     * }
+     * </pre></blockquote>
      *
      * @param resolver {@link ContentResolver} to use
      * @param query    the {@link Query} to use
@@ -128,8 +122,8 @@ public final class RxCursorLoader {
 
     /**
      * Create a new {@link Single} that loads {@link Cursor} once and does not close it.
-     * Does not apply any schedulers. Calls {@link SingleSubscriber#onSuccess(Object)} once loading
-     * finished. Does not call {@link SingleSubscriber#onError(Throwable)}. If the
+     * Calls {@link SingleSubscriber#onSuccess(Object)} once loading finished.
+     * Does not call {@link SingleSubscriber#onError(Throwable)}. If the
      * {@link ContentResolver} query returns null, null will be passed to onSuccess().
      *
      * @param resolver {@link ContentResolver} to use
