@@ -62,7 +62,6 @@ public final class RxCursorLoaderInstrumentedTest {
     }
 
     private void testValidCursor(@Nullable final Cursor c) {
-        // Well it can be null if your MediaStore is fucked up, but we do not consider this option
         assertNotNull(c);
 
         // Test if can query after 1 sec (not closed while onNext())

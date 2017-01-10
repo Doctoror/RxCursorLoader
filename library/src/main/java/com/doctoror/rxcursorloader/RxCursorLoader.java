@@ -209,7 +209,11 @@ public final class RxCursorLoader {
                         mQuery.sortOrder);
 
                 if (mSubscriber != null && !mSubscriber.isUnsubscribed()) {
-                    mSubscriber.onNext(c);
+                    if (c != null) {
+                        mSubscriber.onNext(c);
+                    } else {
+                        mSubscriber.onError(new QueryReturnedNullException());
+                    }
                 }
             }
         }
