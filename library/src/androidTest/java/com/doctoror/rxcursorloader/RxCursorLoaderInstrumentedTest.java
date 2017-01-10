@@ -54,6 +54,7 @@ public final class RxCursorLoaderInstrumentedTest {
                 InstrumentationRegistry.getTargetContext().getContentResolver(), query);
         final Subscription s = o.subscribe(cursor -> {
             testValidCursor(cursor);
+            cursor.close();
             cdl.countDown();
         });
         cdl.await();
@@ -133,6 +134,7 @@ public final class RxCursorLoaderInstrumentedTest {
                 .subscribe(c -> {
                     assertNotEquals(Looper.getMainLooper(), Looper.myLooper());
                     testValidCursor(c);
+                    c.close();
                     cdl.countDown();
                 });
         cdl.await();
@@ -166,6 +168,7 @@ public final class RxCursorLoaderInstrumentedTest {
         RxCursorLoader.create(InstrumentationRegistry.getTargetContext()
                 .getContentResolver(), query).take(1).subscribe(c -> {
             testValidCursor(c);
+            c.close();
             cdl.countDown();
         });
         cdl.await();

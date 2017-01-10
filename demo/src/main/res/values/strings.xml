@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">CursorLoaderObservable</string>
+    <string name="app_name">RxCursorLoader Demo</string>
 
     <string name="Permission_denied">Permission denied</string>
     <string name="No_artists_found">No artists found</string>

@@ -21,6 +21,7 @@ import com.tbruyelle.rxpermissions.RxPermissions;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -30,6 +31,7 @@ import android.widget.ViewAnimator;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import rx.Observer;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -79,7 +81,7 @@ public final class DemoActivity extends Activity {
     protected void onStop() {
         super.onStop();
         if (mAdapter != null) {
-            mAdapter.swapCursor(null);
+            mAdapter.changeCursor(null);
         }
         if (mCursorSubscription != null) {
             mCursorSubscription.unsubscribe();
@@ -97,16 +99,33 @@ public final class DemoActivity extends Activity {
                 ArtistsQuery.mQuery)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(cursor -> {
-            if (mAdapter == null) {
-                mAdapter = new ArtistsCursorAdapter(DemoActivity.this, cursor);
-                mListView.setAdapter(mAdapter);
-            } else {
-                mAdapter.swapCursor(cursor);
-            }
-            mAnimator.setDisplayedChild(mAdapter.isEmpty()
-                    ? ANIMATOR_CHILD_EMPTY : ANIMATOR_CHILD_LIST);
-        });
+                .subscribe(new Observer<Cursor>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(final Throwable e) {
+                        showError(e.getMessage());
+                    }
+
+                    @Override
+                    public void onNext(final Cursor cursor) {
+                        onCursorLoaded(cursor);
+                    }
+                });
+    }
+
+    private void onCursorLoaded(final Cursor cursor) {
+        if (mAdapter == null) {
+            mAdapter = new ArtistsCursorAdapter(DemoActivity.this, cursor);
+            mListView.setAdapter(mAdapter);
+        } else {
+            mAdapter.changeCursor(cursor);
+        }
+        mAnimator.setDisplayedChild(mAdapter.isEmpty()
+                ? ANIMATOR_CHILD_EMPTY : ANIMATOR_CHILD_LIST);
     }
 
     private static String externalStoragePermission() {

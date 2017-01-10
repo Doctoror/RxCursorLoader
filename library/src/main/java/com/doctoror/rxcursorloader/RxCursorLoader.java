@@ -15,7 +15,6 @@
  */
 package com.doctoror.rxcursorloader;
 
-import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.database.ContentObserver;
 import android.database.Cursor;
@@ -76,31 +75,32 @@ public final class RxCursorLoader {
     /**
      * Create a new {@link Observable} that emits items from a {@link ContentResolver} query.
      * This acts like {@link android.content.CursorLoader}.<br>
-     * When the Cursor is loaded, it is passed to {@link Observer#onNext(Object)}} (will be null if
-     * {@link ContentProvider} returns null).
+     * When a non-null Cursor is loaded, it is passed to {@link Observer#onNext(Object)}}. If the
+     * query returns null, {@link QueryReturnedNullException} is passed to {@link
+     * Observer#onError(Throwable)}
      * <br>
      * Every time the content changes, the Cursor will be reloaded and passed to {@link
-     * Observer#onNext(Object)}.
+     * Observer#onNext(Object)}. Make sure to close old cursor because Cursors are not automatically
+     * closed.
      * <br>
-     * {@link Observer#onCompleted()}} and {@link Observer#onError(Throwable)}} are never called.
+     * {@link Observer#onError(Throwable)}} is called if {@link RuntimeException} is caught when
+     * running a query
      * <br>
-     * <br><b>You must call {@link Subscriber#unsubscribe()} when finished.</b> Do not use
-     * com.trello.rxlifecycle as it does not call unsubscribe. Cursor is automatically closed on
-     * unsubscribe so make sure nothing is using Cursor or else you may get a RuntimeException
+     * <br><b>You must call {@link Subscriber#unsubscribe()} when finished.</b>
      *
      * <br><blockquote><pre>
      * protected void onStop() {
      *     super.onStop();
-     *     // stop using Cursor
-     *     mAdapter.swapCursor(null);
-     *     // Unsubscribe to close the Cursor and stop monitoring for ContentObserver changes
+     *     // stop using Cursor and close it
+     *     mAdapter.changeCursor(null);
+     *     // Unsubscribe to stop monitoring for ContentObserver changes
      *     mCursorSubscription.unsubscribe();
      * }
      * </pre></blockquote>
      *
      * @param resolver {@link ContentResolver} to use
      * @param query    the {@link Query} to use
-     * @return new {@link RxCursorLoader} instance.
+     * @return new {@link Observable}.
      */
     @NonNull
     public static Observable<Cursor> create(@NonNull final ContentResolver resolver,
@@ -114,21 +114,18 @@ public final class RxCursorLoader {
             throw new NullPointerException("Params param must not be null");
         }
         final CursorLoaderOnSubscribe onSubscribe = new CursorLoaderOnSubscribe(resolver, query);
-        return Observable.create(onSubscribe)
-                .doOnUnsubscribe(onSubscribe::release)
-                .doOnCompleted(onSubscribe::release)
-                .doOnNext(c -> onSubscribe.closePreviousCursor());
+        return Observable.create(onSubscribe).doOnUnsubscribe(onSubscribe::release);
     }
 
     /**
      * Create a new {@link Single} that loads {@link Cursor} once and does not close it.
-     * Calls {@link SingleSubscriber#onSuccess(Object)} once loading finished.
-     * Does not call {@link SingleSubscriber#onError(Throwable)}. If the
-     * {@link ContentResolver} query returns null, null will be passed to onSuccess().
+     * Calls {@link SingleSubscriber#onSuccess(Object)} once non-null {@link Cursor} is loaded.
+     * If the query returns null, {@link QueryReturnedNullException} is passed to {@link
+     * SingleSubscriber#onError(Throwable)}
      *
      * @param resolver {@link ContentResolver} to use
      * @param query    the {@link Query} to use
-     * @return new {@link RxCursorLoader} instance.
+     * @return new {@link Single}.
      */
     @NonNull
     public static Single<Cursor> single(@NonNull final ContentResolver resolver,
@@ -162,9 +159,6 @@ public final class RxCursorLoader {
 
         private ContentObserver mResolverObserver;
 
-        private Cursor mPrevious;
-        private Cursor mCursor;
-
         CursorLoaderOnSubscribe(@NonNull final ContentResolver resolver,
                 @NonNull final Query query) {
             mContentResolver = resolver;
@@ -173,55 +167,36 @@ public final class RxCursorLoader {
 
         @Override
         public void call(final Subscriber<? super Cursor> subscriber) {
-            final HandlerThread handlerThread = new HandlerThread(
-                    "RxCursorLoader.ContentObserver");
+            final HandlerThread handlerThread = new HandlerThread(TAG.concat(".HandlerThread"));
             handlerThread.start();
             synchronized (mLock) {
                 mHandler = new Handler(handlerThread.getLooper());
                 mSubscriber = subscriber;
+                mContentResolver.registerContentObserver(mQuery.contentUri, true,
+                        getResolverObserver());
             }
             reload();
         }
 
-        void closePreviousCursor() {
-            synchronized (mLock) {
-                if (mPrevious != null) {
-                    mPrevious.close();
-                    mPrevious = null;
-                }
-            }
-        }
-
         private void release() {
             synchronized (mLock) {
-                if (mCursor != null) {
-                    if (mResolverObserver != null) {
-                        mCursor.unregisterContentObserver(mResolverObserver);
-                    }
-                    mCursor.close();
-                    mCursor = null;
+                if (mSubscriber != null) {
+                    mSubscriber.onCompleted();
                 }
-                if (mPrevious != null) {
-                    mPrevious.close();
-                    mPrevious = null;
+                if (mResolverObserver != null) {
+                    mContentResolver.unregisterContentObserver(mResolverObserver);
                 }
                 mSubscriber = null;
             }
         }
 
         /**
-         * Unregisters ContentObserver from previous Cursor, loads new {@link Cursor} and registers
-         * ContentObserver on it. Previous cursor will be closed in {@link #closePreviousCursor()}
+         * Loads new {@link Cursor}
          *
          * This must be called from {@link #call(Subscriber)} thread
          */
         private synchronized void reload() {
             synchronized (mLock) {
-                final Cursor old = mCursor;
-                if (old != null && mResolverObserver != null) {
-                    old.unregisterContentObserver(mResolverObserver);
-                }
-
                 if (LOG) {
                     Log.d(TAG, mQuery.toString());
                 }
@@ -233,15 +208,7 @@ public final class RxCursorLoader {
                         mQuery.selectionArgs,
                         mQuery.sortOrder);
 
-                mCursor = c;
-                if (old != c) {
-                    mPrevious = old;
-                }
-
-                if (c != null) {
-                    c.registerContentObserver(getResolverObserver());
-                }
-                if (mSubscriber != null) {
+                if (mSubscriber != null && !mSubscriber.isUnsubscribed()) {
                     mSubscriber.onNext(c);
                 }
             }
