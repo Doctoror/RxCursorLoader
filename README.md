@@ -25,38 +25,38 @@ final CursorLoaderObservable.Query query = new CursorLoaderObservable.Query.Buil
         .create();
 ```
 
-Use create(ContentResolver, Query) to create new RxCursorLoader instance.
-Do not lose Subscription, you will need it to unsubscribe.
+Thare are two cases covered by this library.
+
+1) You want to load the Cursor once
+
+```java
+RxCursorLoader.single(getContentResolver(), query)
+    .subscribeOn(Schedulers.io())
+    .observeOn(AndroidSchedulers.mainThread())
+    .subscribe(this::handleAndCloseCursor);
+```
+2) You want to reload a Cursor every time the content under URI changes, just like CursorLoader does.
+Note that unlike CursorLoader, this does not close the Cursor for you, so make sure to close old cursor once onNext() is called.
 
 ```java
 mCursorSubscription = CursorLoaderObservable.create(getContentResolver(), params)
-                .subscribe(cursor -> mAdapter.swapCursor(cursor));
+    .subscribeOn(Schedulers.io())
+    .observeOn(AndroidSchedulers.mainThread())
+    .subscribe(c -> mCursorAdapter.changeCursor(c));
 ```
 
-When the Cursor is loaded, it is passed to onNext(Object) (can be null).
-Every time the content changes, the Cursor will be reloaded and passed to onNext(Object).
-Observer#onCompleted() and Observer#onError(Throwable) are never called.
-
-You must call Subscriber#unsubscribe() when finished. Do not use com.trello.rxlifecycle as
-it does not call unsubscribe. Cursor is automatically closed on unsubscribe so make sure
-nothing is using Cursor or else you may get a RuntimeException
+You must call Subscriber.unsubscribe() when finished so that the library unregisters the ContentObserver
 
 ```java
 @Override
 protected void onStop() {
     super.onStop();
     // stop using Cursor
-    mAdapter.swapCursor(null);
+    mAdapter.changeCursor(null);
     
     // Unsubscribe to close the Cursor and stop monitoring for ContentObserver changes
     mCursorSubscription.unsubscribe();
 }
-```
-
-If you need to load once, use asObservable().take(1), this way you don't need to unsubscribe
-
-```java
-RxCursorLoader.create(resolver, query).asObservable().take(1).subscribe(this::handleCursor);
 ```
 
 ##License
