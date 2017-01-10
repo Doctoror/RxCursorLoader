@@ -59,6 +59,8 @@ protected void onStop() {
 }
 ```
 
+The loaded Cursor is never null. If ContentResolver query returns null, `onError()` will be called with `QueryReturnedNullException`
+
 ##License
 
 ```
