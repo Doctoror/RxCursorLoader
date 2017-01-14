@@ -114,7 +114,9 @@ public final class RxCursorLoader {
             throw new NullPointerException("Params param must not be null");
         }
         final CursorLoaderOnSubscribe onSubscribe = new CursorLoaderOnSubscribe(resolver, query);
-        return Observable.create(onSubscribe).doOnUnsubscribe(onSubscribe::release);
+        return Observable.create(onSubscribe)
+                .doOnCompleted(onSubscribe::release)
+                .doOnUnsubscribe(onSubscribe::release);
     }
 
     /**
