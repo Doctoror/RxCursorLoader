@@ -18,9 +18,9 @@ package com.doctoror.rxcursorloader;
 /**
  * Is thrown when a query returns null
  */
-public final class QueryReturnedNullException extends Exception {
+public class QueryReturnedNullException extends Exception {
 
-    QueryReturnedNullException() {
+    public QueryReturnedNullException() {
 
     }
 
