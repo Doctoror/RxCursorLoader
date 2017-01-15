@@ -182,11 +182,9 @@ public final class RxCursorLoader {
 
         private void release() {
             synchronized (mLock) {
-                if (mSubscriber != null) {
-                    mSubscriber.onCompleted();
-                }
                 if (mResolverObserver != null) {
                     mContentResolver.unregisterContentObserver(mResolverObserver);
+                    mResolverObserver = null;
                 }
                 mSubscriber = null;
             }
