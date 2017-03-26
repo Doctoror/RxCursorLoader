@@ -8,8 +8,14 @@ Min API level 9
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.doctoror.rxcursorloader/library/badge.png?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.doctoror.rxcursorloader/library)
 
+For RxJava 2 
 ```groovy
-compile 'com.github.doctoror.rxcursorloader:library:[version]'
+compile 'com.github.doctoror.rxcursorloader:library:2.0.0'
+```
+
+If you need RxJava 1, you can use the old version
+```groovy
+compile 'com.github.doctoror.rxcursorloader:library:1.1.5'
 ```
 
 ## Usage
@@ -39,13 +45,13 @@ RxCursorLoader.single(getContentResolver(), query)
 Note that unlike CursorLoader, this does not close the Cursor for you, so make sure to close old cursor once onNext() is called.
 
 ```java
-mCursorSubscription = CursorLoaderObservable.create(getContentResolver(), params)
+mCursorDisposable = CursorLoaderObservable.create(getContentResolver(), params)
     .subscribeOn(Schedulers.io())
     .observeOn(AndroidSchedulers.mainThread())
     .subscribe(c -> mCursorAdapter.changeCursor(c));
 ```
 
-You must call Subscriber.unsubscribe() when finished so that the library unregisters the ContentObserver
+You must call Disposable.dispose() when finished so that the library unregisters the ContentObserver
 
 ```java
 @Override
@@ -55,11 +61,11 @@ protected void onStop() {
     mAdapter.changeCursor(null);
     
     // Unsubscribe to close the Cursor and stop monitoring for ContentObserver changes
-    mCursorSubscription.unsubscribe();
+    mCursorDisposable.dispose();
 }
 ```
 
-The loaded Cursor is never null. If ContentResolver query returns null, `onError()` will be called with `QueryReturnedNullException`
+If ContentResolver query returns null, `onError()` will be called with `QueryReturnedNullException`
 
 ##License
 
