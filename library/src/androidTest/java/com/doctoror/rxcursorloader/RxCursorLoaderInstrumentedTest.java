@@ -28,9 +28,9 @@ import android.support.test.runner.AndroidJUnit4;
 
 import java.util.concurrent.CountDownLatch;
 
-import rx.Observable;
-import rx.Subscription;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 import static org.junit.Assert.*;
 
@@ -52,13 +52,13 @@ public final class RxCursorLoaderInstrumentedTest {
         final CountDownLatch cdl = new CountDownLatch(1);
         final Observable<Cursor> o = RxCursorLoader.create(
                 InstrumentationRegistry.getTargetContext().getContentResolver(), query);
-        final Subscription s = o.subscribe(cursor -> {
+        final Disposable s = o.subscribe(cursor -> {
             testValidCursor(cursor);
             cursor.close();
             cdl.countDown();
         });
         cdl.await();
-        s.unsubscribe();
+        s.dispose();
     }
 
     private void testValidCursor(@Nullable final Cursor c) {

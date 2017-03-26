@@ -8,8 +8,8 @@ android {
     defaultConfig {
         minSdkVersion 9
         targetSdkVersion 25
-        versionCode 11
-        versionName "1.1.5"
+        versionCode 12
+        versionName "2.0.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -49,15 +49,15 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
     testCompile 'junit:junit:4.12'
-    androidTestCompile 'com.android.support:support-annotations:25.1.0'
+    androidTestCompile 'com.android.support:support-annotations:25.3.0'
     androidTestCompile 'com.android.support.test:runner:0.5'
     androidTestCompile 'com.android.support.test:rules:0.5'
 
-    javadocDeps 'com.android.support:support-annotations:25.1.0'
-    javadocDeps 'io.reactivex:rxjava:1.2.5'
+    javadocDeps 'com.android.support:support-annotations:25.3.0'
+    javadocDeps 'io.reactivex.rxjava2:rxjava:2.0.7'
 
-    compile 'com.android.support:support-annotations:25.1.0'
-    compile 'io.reactivex:rxjava:1.2.5'
+    compile 'com.android.support:support-annotations:25.3.0'
+    compile 'io.reactivex.rxjava2:rxjava:2.0.7'
 }
 
 apply from: './gradle-mvn-push.gradle'

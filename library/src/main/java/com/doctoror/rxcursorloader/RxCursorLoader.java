@@ -28,11 +28,15 @@ import android.util.Log;
 
 import java.util.Arrays;
 
-import rx.Observable;
-import rx.Observer;
-import rx.Single;
-import rx.SingleSubscriber;
-import rx.Subscriber;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Observer;
+import io.reactivex.Single;
+import io.reactivex.SingleEmitter;
+import io.reactivex.SingleOnSubscribe;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 /**
  * An RX replacement for {@link android.content.CursorLoader}
@@ -86,7 +90,7 @@ public final class RxCursorLoader {
      * {@link Observer#onError(Throwable)}} is called if {@link RuntimeException} is caught when
      * running a query
      * <br>
-     * <br><b>You must call {@link Subscriber#unsubscribe()} when finished.</b>
+     * <br><b>You must call {@link Disposable#dispose()} when finished.</b>
      *
      * <br><blockquote><pre>
      * protected void onStop() {
@@ -94,7 +98,7 @@ public final class RxCursorLoader {
      *     // stop using Cursor and close it
      *     mAdapter.changeCursor(null);
      *     // Unsubscribe to stop monitoring for ContentObserver changes
-     *     mCursorSubscription.unsubscribe();
+     *     mCursorDisposable.dispose();
      * }
      * </pre></blockquote>
      *
@@ -115,15 +119,14 @@ public final class RxCursorLoader {
         }
         final CursorLoaderOnSubscribe onSubscribe = new CursorLoaderOnSubscribe(resolver, query);
         return Observable.create(onSubscribe)
-                .doOnCompleted(onSubscribe::release)
-                .doOnUnsubscribe(onSubscribe::release);
+                .doOnDispose(onSubscribe::release)
+                .doOnComplete(onSubscribe::release);
     }
 
     /**
      * Create a new {@link Single} that loads {@link Cursor} once and does not close it.
-     * Calls {@link SingleSubscriber#onSuccess(Object)} once non-null {@link Cursor} is loaded.
-     * If the query returns null, {@link QueryReturnedNullException} is passed to {@link
-     * SingleSubscriber#onError(Throwable)}
+     * Calls {@link Consumer#accept(Object)} once non-null {@link Cursor} is loaded.
+     * If the query returns null, {@link QueryReturnedNullException} is thrown.
      *
      * @param resolver {@link ContentResolver} to use
      * @param query    the {@link Query} to use
@@ -145,7 +148,7 @@ public final class RxCursorLoader {
     }
 
     private static final class CursorLoaderOnSubscribe
-            implements Observable.OnSubscribe<Cursor> {
+            implements ObservableOnSubscribe<Cursor> {
 
         private final Object mLock = new Object();
 
@@ -157,7 +160,7 @@ public final class RxCursorLoader {
 
         private Handler mHandler;
 
-        private Subscriber<? super Cursor> mSubscriber;
+        private ObservableEmitter<Cursor> mEmitter;
 
         private ContentObserver mResolverObserver;
 
@@ -168,12 +171,12 @@ public final class RxCursorLoader {
         }
 
         @Override
-        public void call(final Subscriber<? super Cursor> subscriber) {
+        public void subscribe(final ObservableEmitter<Cursor> emitter) throws Exception {
             final HandlerThread handlerThread = new HandlerThread(TAG.concat(".HandlerThread"));
             handlerThread.start();
             synchronized (mLock) {
                 mHandler = new Handler(handlerThread.getLooper());
-                mSubscriber = subscriber;
+                mEmitter = emitter;
                 mContentResolver.registerContentObserver(mQuery.contentUri, true,
                         getResolverObserver());
             }
@@ -186,14 +189,14 @@ public final class RxCursorLoader {
                     mContentResolver.unregisterContentObserver(mResolverObserver);
                     mResolverObserver = null;
                 }
-                mSubscriber = null;
+                mEmitter = null;
             }
         }
 
         /**
          * Loads new {@link Cursor}
          *
-         * This must be called from {@link #call(Subscriber)} thread
+         * This must be called from {@link #subscribe(ObservableEmitter)} thread
          */
         private synchronized void reload() {
             synchronized (mLock) {
@@ -208,11 +211,11 @@ public final class RxCursorLoader {
                         mQuery.selectionArgs,
                         mQuery.sortOrder);
 
-                if (mSubscriber != null && !mSubscriber.isUnsubscribed()) {
+                if (mEmitter != null && !mEmitter.isDisposed()) {
                     if (c != null) {
-                        mSubscriber.onNext(c);
+                        mEmitter.onNext(c);
                     } else {
-                        mSubscriber.onError(new QueryReturnedNullException());
+                        mEmitter.onError(new QueryReturnedNullException());
                     }
                 }
             }
@@ -220,7 +223,8 @@ public final class RxCursorLoader {
 
         /**
          * Creates the {@link ContentObserver} to observe {@link Cursor} changes.
-         * It must be initialized from thread in which {@link #call(Subscriber)} is called
+         * It must be initialized from thread in which {@link #subscribe(ObservableEmitter)} is
+         * called.
          *
          * @return the {@link ContentObserver} to observe {@link Cursor} changes.
          */
@@ -241,7 +245,7 @@ public final class RxCursorLoader {
     }
 
     private static final class CursorLoaderOnSubscribeSingle
-            implements Single.OnSubscribe<Cursor> {
+            implements SingleOnSubscribe<Cursor> {
 
         @NonNull
         private final ContentResolver mContentResolver;
@@ -256,7 +260,7 @@ public final class RxCursorLoader {
         }
 
         @Override
-        public void call(final SingleSubscriber<? super Cursor> singleSubscriber) {
+        public void subscribe(final SingleEmitter<Cursor> emitter) throws Exception {
             if (LOG) {
                 Log.d(TAG, mQuery.toString());
             }
@@ -268,7 +272,7 @@ public final class RxCursorLoader {
                     mQuery.selectionArgs,
                     mQuery.sortOrder);
 
-            singleSubscriber.onSuccess(c);
+            emitter.onSuccess(c);
         }
     }
 

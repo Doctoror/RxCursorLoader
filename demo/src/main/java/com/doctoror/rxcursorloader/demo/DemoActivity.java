@@ -16,7 +16,7 @@
 package com.doctoror.rxcursorloader.demo;
 
 import com.doctoror.rxcursorloader.RxCursorLoader;
-import com.tbruyelle.rxpermissions.RxPermissions;
+import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import android.Manifest;
 import android.annotation.TargetApi;
@@ -31,10 +31,10 @@ import android.widget.ViewAnimator;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import rx.Observer;
-import rx.Subscription;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public final class DemoActivity extends Activity {
 
@@ -52,7 +52,7 @@ public final class DemoActivity extends Activity {
     @BindView(android.R.id.list)
     ListView mListView;
 
-    private Subscription mCursorSubscription;
+    private Disposable mCursorDisposable;
     private ArtistsCursorAdapter mAdapter;
 
     @Override
@@ -83,9 +83,9 @@ public final class DemoActivity extends Activity {
         if (mAdapter != null) {
             mAdapter.changeCursor(null);
         }
-        if (mCursorSubscription != null) {
-            mCursorSubscription.unsubscribe();
-            mCursorSubscription = null;
+        if (mCursorDisposable != null) {
+            mCursorDisposable.dispose();
+            mCursorDisposable = null;
         }
     }
 
@@ -95,29 +95,14 @@ public final class DemoActivity extends Activity {
     }
 
     private void subscribe() {
-        mCursorSubscription = RxCursorLoader.create(getContentResolver(),
+        mCursorDisposable = RxCursorLoader.create(getContentResolver(),
                 ArtistsQuery.mQuery)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<Cursor>() {
-                    @Override
-                    public void onCompleted() {
-
-                    }
-
-                    @Override
-                    public void onError(final Throwable e) {
-                        showError(e.getMessage());
-                    }
-
-                    @Override
-                    public void onNext(final Cursor cursor) {
-                        onCursorLoaded(cursor);
-                    }
-                });
+                .subscribe(this::onCursorLoaded, this::onCursorLoadFailed);
     }
 
-    private void onCursorLoaded(final Cursor cursor) {
+    private void onCursorLoaded(@NonNull final Cursor cursor) {
         if (mAdapter == null) {
             mAdapter = new ArtistsCursorAdapter(DemoActivity.this, cursor);
             mListView.setAdapter(mAdapter);
@@ -126,6 +111,10 @@ public final class DemoActivity extends Activity {
         }
         mAnimator.setDisplayedChild(mAdapter.isEmpty()
                 ? ANIMATOR_CHILD_EMPTY : ANIMATOR_CHILD_LIST);
+    }
+
+    private void onCursorLoadFailed(@NonNull final Throwable t) {
+        showError(t.toString());
     }
 
     private static String externalStoragePermission() {
