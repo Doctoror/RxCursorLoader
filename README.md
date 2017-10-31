@@ -1,10 +1,10 @@
-##Description
+## Description
 
 An RX replacement for [android.content.CursorLoader](https://developer.android.com/reference/android/content/CursorLoader.html)
 
 Min API level 9
 
-##Setup
+## Setup
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.doctoror.rxcursorloader/library/badge.png?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.doctoror.rxcursorloader/library)
 
