@@ -67,7 +67,7 @@ protected void onStop() {
 
 If ContentResolver query returns null, `onError()` will be called with `QueryReturnedNullException`
 
-##License
+## License
 
 ```
 Copyright 2016 Yaroslav Mytkalyk
