@@ -16,7 +16,6 @@
 package com.doctoror.rxcursorloader.demo;
 
 import com.doctoror.rxcursorloader.RxCursorLoader;
-import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import android.Manifest;
 import android.annotation.TargetApi;
@@ -31,7 +30,6 @@ import android.widget.ViewAnimator;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
@@ -66,15 +64,7 @@ public final class DemoActivity extends Activity {
     protected void onStart() {
         super.onStart();
         mAnimator.setDisplayedChild(ANIMATOR_CHILD_PROGRESS);
-        new RxPermissions(this)
-                .request(externalStoragePermission())
-                .subscribe(granted -> {
-                    if (granted) {
-                        subscribe();
-                    } else {
-                        showError(getText(R.string.Permission_denied));
-                    }
-                });
+        subscribe();
     }
 
     @Override

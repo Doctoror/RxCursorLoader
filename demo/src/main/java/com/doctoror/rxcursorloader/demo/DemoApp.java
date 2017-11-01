@@ -6,7 +6,6 @@ import android.os.StrictMode;
 /**
  * Created by Yaroslav Mytkalyk on 10.01.17.
  */
-
 public final class DemoApp extends Application {
 
     @Override

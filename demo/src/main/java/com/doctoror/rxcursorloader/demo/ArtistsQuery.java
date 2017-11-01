@@ -17,29 +17,33 @@ package com.doctoror.rxcursorloader.demo;
 
 import com.doctoror.rxcursorloader.RxCursorLoader;
 
+import android.net.Uri;
 import android.provider.MediaStore;
 
 /**
  * Created by Yaroslav Mytkalyk on 17.10.16.
  */
-
 final class ArtistsQuery {
 
     private ArtistsQuery() {
         throw new UnsupportedOperationException();
     }
 
-    static final int COLUMN_ID = 0;
+    private static final Uri URI = new Uri.Builder().scheme("content")
+            .authority(DemoContentProvider.AUTHORITY).build();
+
+    static final String[] COLUMNS = new String[]{
+            MediaStore.Audio.Artists._ID,
+            MediaStore.Audio.Artists.NUMBER_OF_ALBUMS,
+            MediaStore.Audio.Artists.ARTIST
+    };
+
     static final int COLUMN_NUMBER_OF_ALBUMS = 1;
     static final int COLUMN_ARTIST = 2;
 
     static RxCursorLoader.Query mQuery = new RxCursorLoader.Query.Builder()
-            .setContentUri(MediaStore.Audio.Artists.INTERNAL_CONTENT_URI)
-            .setProjection(new String[]{
-                    MediaStore.Audio.Artists._ID,
-                    MediaStore.Audio.Artists.NUMBER_OF_ALBUMS,
-                    MediaStore.Audio.Artists.ARTIST
-            })
+            .setContentUri(URI)
+            .setProjection(COLUMNS)
             .setSortOrder(MediaStore.Audio.Artists.ARTIST)
             .create();
 }
