@@ -10,7 +10,7 @@ Min API level 9
 
 For RxJava 2 
 ```groovy
-compile 'com.github.doctoror.rxcursorloader:library:2.0.0'
+compile 'com.github.doctoror.rxcursorloader:library:2.0.1'
 ```
 
 If you need RxJava 1, you can use the old version
