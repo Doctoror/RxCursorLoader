@@ -26,17 +26,6 @@ android {
         release {
         }
     }
-
-    task grantPermissions(type: Exec, dependsOn: 'installDebugAndroidTest') {
-        executable "sh"
-        args "-c", "\$ANDROID_HOME/platform-tools/adb shell pm grant com.doctoror.rxcursorloader.test android.permission.READ_EXTERNAL_STORAGE"
-    }
-
-    tasks.whenTaskAdded { task ->
-        if (task.name.startsWith('connectedDebugAndroidTest')) {
-            task.dependsOn grantPermissions
-        }
-    }
     
     configurations {
         javadocDeps
@@ -46,7 +35,6 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support:support-annotations:26.1.0'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test:rules:1.0.1'
