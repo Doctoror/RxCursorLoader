@@ -1,0 +1,41 @@
+allprojects {
+    repositories {
+        jcenter()
+        maven { url 'https://maven.google.com' }
+    }
+}
+
+ext {
+    //Android
+    androidBuildToolsVersion = "27.0.1"
+    androidMinSdkVersion = 9
+    androidTargetSdkVersion = 26
+    androidCompileSdkVersion = 26
+
+    //Libraries
+    supportVersion = '27.0.0'
+    rxJavaVersion = '2.1.6'
+    rxAndroidVersion = '2.0.1'
+    butterKnifeVersion = '8.8.1'
+
+    //Testing
+    testRunnerVersion = '1.0.1'
+
+    demoDependencies = [
+            rxJava              : "io.reactivex.rxjava2:rxjava:$rxJavaVersion",
+            rxAndroid           : "io.reactivex.rxjava2:rxandroid:$rxAndroidVersion",
+            butterKnife         : "com.jakewharton:butterknife:$butterKnifeVersion",
+            butterKnifeCompiler : "com.jakewharton:butterknife-compiler:$butterKnifeVersion",
+            supportV4           : "com.android.support:support-v4:$supportVersion",
+    ]
+
+    libraryDependencies = [
+            annotations : "com.android.support:support-annotations:$supportVersion",
+            rxJava      : "io.reactivex.rxjava2:rxjava:$rxJavaVersion"
+    ]
+
+    libraryTestDependencies = [
+            testRunner     : "com.android.support.test:runner:$testRunnerVersion",
+            testRules      : "com.android.support.test:rules:$testRunnerVersion",
+    ]
+}

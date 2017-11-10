@@ -1,16 +1,20 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion "26.0.2"
+
+    def globalConfiguration = rootProject.extensions.getByName("ext")
+
+    compileSdkVersion globalConfiguration["androidCompileSdkVersion"]
+    buildToolsVersion globalConfiguration["androidBuildToolsVersion"]
 
     defaultConfig {
-        minSdkVersion 9
-        targetSdkVersion 26
-        versionCode 13
-        versionName "2.0.1"
+        minSdkVersion globalConfiguration["androidMinSdkVersion"]
+        targetSdkVersion globalConfiguration["androidTargetSdkVersion"]
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        versionCode globalConfiguration["androidVersionCode"]
+        versionName globalConfiguration["androidVersionName"]
+
+        testInstrumentationRunner globalConfiguration["testInstrumentationRunner"]
     }
 
     lintOptions {
@@ -33,17 +37,18 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    def d = rootProject.ext.libraryDependencies
+    def td = rootProject.ext.libraryTestDependencies
 
-    androidTestImplementation 'com.android.support:support-annotations:26.1.0'
-    androidTestImplementation 'com.android.support.test:runner:1.0.1'
-    androidTestImplementation 'com.android.support.test:rules:1.0.1'
+    androidTestImplementation d.annotations
+    androidTestImplementation td.testRunner
+    androidTestImplementation td.testRules
 
-    javadocDeps 'com.android.support:support-annotations:26.1.0'
-    javadocDeps 'io.reactivex.rxjava2:rxjava:2.1.6'
+    javadocDeps d.annotations
+    javadocDeps d.rxJava
 
-    implementation 'com.android.support:support-annotations:26.1.0'
-    implementation 'io.reactivex.rxjava2:rxjava:2.1.6'
+    implementation d.annotations
+    implementation d.rxJava
 }
 
 apply from: './gradle-mvn-push.gradle'
