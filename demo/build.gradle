@@ -36,11 +36,7 @@ dependencies {
     def d = rootProject.ext.demoDependencies
 
     implementation project(':library')
-
     implementation d.supportV4
-    implementation d.butterKnife
-    annotationProcessor d.butterKnifeCompiler
-
     implementation d.rxJava
     implementation d.rxAndroid
 }

@@ -16,7 +16,6 @@ ext {
     supportVersion = '27.0.2'
     rxJavaVersion = '2.1.8'
     rxAndroidVersion = '2.0.1'
-    butterKnifeVersion = '8.8.1'
 
     //Testing
     testRunnerVersion = '1.0.1'
@@ -24,8 +23,6 @@ ext {
     demoDependencies = [
             rxJava              : "io.reactivex.rxjava2:rxjava:$rxJavaVersion",
             rxAndroid           : "io.reactivex.rxjava2:rxandroid:$rxAndroidVersion",
-            butterKnife         : "com.jakewharton:butterknife:$butterKnifeVersion",
-            butterKnifeCompiler : "com.jakewharton:butterknife-compiler:$butterKnifeVersion",
             supportV4           : "com.android.support:support-v4:$supportVersion",
     ]
 

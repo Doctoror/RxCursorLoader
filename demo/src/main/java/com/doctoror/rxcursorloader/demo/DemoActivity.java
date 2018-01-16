@@ -28,8 +28,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.ViewAnimator;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
@@ -41,14 +39,9 @@ public final class DemoActivity extends Activity {
     private static final int ANIMATOR_CHILD_EMPTY = 2;
     private static final int ANIMATOR_CHILD_LIST = 3;
 
-    @BindView(R.id.animator)
-    ViewAnimator mAnimator;
-
-    @BindView(R.id.textError)
-    TextView mErrorText;
-
-    @BindView(android.R.id.list)
-    ListView mListView;
+    private ViewAnimator mAnimator;
+    private TextView mErrorText;
+    private ListView mListView;
 
     private Disposable mCursorDisposable;
     private ArtistsCursorAdapter mAdapter;
@@ -57,7 +50,9 @@ public final class DemoActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demo);
-        ButterKnife.bind(this);
+        mAnimator = findViewById(R.id.animator);
+        mErrorText = findViewById(R.id.textError);
+        mListView = findViewById(android.R.id.list);
     }
 
     @Override
