@@ -17,11 +17,8 @@ package com.doctoror.rxcursorloader.demo;
 
 import com.doctoror.rxcursorloader.RxCursorLoader;
 
-import android.Manifest;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.database.Cursor;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.widget.ListView;
@@ -100,23 +97,5 @@ public final class DemoActivity extends Activity {
 
     private void onCursorLoadFailed(@NonNull final Throwable t) {
         showError(t.toString());
-    }
-
-    private static String externalStoragePermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            return PermissionsJellyBean.PERMISSION;
-        }
-        return PermissionsCompat.PERMISSION;
-    }
-
-    private static final class PermissionsCompat {
-
-        static String PERMISSION = Manifest.permission.WRITE_EXTERNAL_STORAGE;
-    }
-
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    private static final class PermissionsJellyBean {
-
-        static String PERMISSION = Manifest.permission.READ_EXTERNAL_STORAGE;
     }
 }
