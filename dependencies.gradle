@@ -14,7 +14,7 @@ ext {
 
     //Libraries
     supportVersion = '27.0.0'
-    rxJavaVersion = '2.1.6'
+    rxJavaVersion = '2.1.8'
     rxAndroidVersion = '2.0.1'
     butterKnifeVersion = '8.8.1'
 
