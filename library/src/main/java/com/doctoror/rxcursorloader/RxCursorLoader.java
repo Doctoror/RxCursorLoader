@@ -36,6 +36,7 @@ import io.reactivex.Single;
 import io.reactivex.SingleEmitter;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 
 /**
@@ -119,8 +120,12 @@ public final class RxCursorLoader {
         }
         final CursorLoaderOnSubscribe onSubscribe = new CursorLoaderOnSubscribe(resolver, query);
         return Observable.create(onSubscribe)
-                .doOnDispose(onSubscribe::release)
-                .doOnComplete(onSubscribe::release);
+                .doOnDispose(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        onSubscribe.release();
+                    }
+                });
     }
 
     /**
@@ -194,7 +199,7 @@ public final class RxCursorLoader {
         }
 
         /**
-         * Loads new {@link Cursor}
+         * Loads new {@link Cursor}.
          *
          * This must be called from {@link #subscribe(ObservableEmitter)} thread
          */
