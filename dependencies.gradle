@@ -15,7 +15,7 @@ ext {
     //Libraries
     supportVersion = '27.1.0'
     rxJavaVersion = '2.1.12'
-    rxAndroidVersion = '2.0.1'
+    rxAndroidVersion = '2.0.2'
 
     //Testing
     testRunnerVersion = '1.0.1'
