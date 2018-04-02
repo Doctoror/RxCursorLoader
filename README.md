@@ -45,8 +45,7 @@ RxCursorLoader.single(getContentResolver(), query)
 Note that unlike CursorLoader, this does not close the Cursor for you, so make sure to close old cursor once onNext() is called.
 
 ```java
-mCursorDisposable = CursorLoaderObservable.create(getContentResolver(), params)
-    .subscribeOn(Schedulers.io())
+mCursorDisposable = CursorLoaderObservable.create(getContentResolver(), params, Schedulers.io())
     .observeOn(AndroidSchedulers.mainThread())
     .subscribe(c -> mCursorAdapter.changeCursor(c));
 ```
