@@ -21,6 +21,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
@@ -122,7 +123,7 @@ public final class RxCursorLoader {
         return Observable.create(onSubscribe)
                 .doOnDispose(new Action() {
                     @Override
-                    public void run() throws Exception {
+                    public void run() {
                         onSubscribe.release();
                     }
                 });
@@ -176,7 +177,7 @@ public final class RxCursorLoader {
         }
 
         @Override
-        public void subscribe(final ObservableEmitter<Cursor> emitter) throws Exception {
+        public void subscribe(final ObservableEmitter<Cursor> emitter) {
             final HandlerThread handlerThread = new HandlerThread(TAG.concat(".HandlerThread"));
             handlerThread.start();
             synchronized (mLock) {
@@ -194,8 +195,16 @@ public final class RxCursorLoader {
                     mContentResolver.unregisterContentObserver(mResolverObserver);
                     mResolverObserver = null;
                 }
+
                 mEmitter = null;
-                mHandler.getLooper().quit();
+
+                if (mHandler != null) {
+                    final Looper looper = mHandler.getLooper();
+                    if (looper != null) {
+                        looper.quit();
+                    }
+                }
+                mHandler = null;
             }
         }
 
@@ -266,7 +275,7 @@ public final class RxCursorLoader {
         }
 
         @Override
-        public void subscribe(final SingleEmitter<Cursor> emitter) throws Exception {
+        public void subscribe(final SingleEmitter<Cursor> emitter) {
             if (LOG) {
                 Log.d(TAG, mQuery.toString());
             }
