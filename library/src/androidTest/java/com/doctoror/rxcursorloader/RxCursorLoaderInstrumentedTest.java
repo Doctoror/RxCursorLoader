@@ -68,26 +68,26 @@ public final class RxCursorLoaderInstrumentedTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testNoUriBuilder() throws Exception {
+    public void testNoUriBuilder() {
         //noinspection ConstantConditions
         RxCursorLoader.create(mContentResolver, new RxCursorLoader.Query.Builder().create());
     }
 
     @Test(expected = NullPointerException.class)
-    public void testNullContentObserver() throws Exception {
+    public void testNullContentObserver() {
         //noinspection ConstantConditions
         RxCursorLoader.create(null, new RxCursorLoader.Query.Builder()
                 .setContentUri(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI).create());
     }
 
     @Test(expected = NullPointerException.class)
-    public void testNullParams() throws Exception {
+    public void testNullParams() {
         //noinspection ConstantConditions
         RxCursorLoader.create(mContentResolver, null);
     }
 
     @Test
-    public void testQueryParcelable() throws Exception {
+    public void testQueryParcelable() {
         final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
                 .setContentUri(URI)
                 .setProjection(new String[]{MediaStore.Audio.Media._ID})
@@ -108,7 +108,7 @@ public final class RxCursorLoaderInstrumentedTest {
 
     @Test
     @Ignore // FIXME
-    public void testCreateSubscribe() throws Exception {
+    public void testCreateSubscribe() {
         final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
                 .setContentUri(URI)
                 .setProjection(new String[]{MediaStore.Audio.Media._ID})
@@ -122,7 +122,7 @@ public final class RxCursorLoaderInstrumentedTest {
     }
 
     @Test
-    public void testSingleSubscribe() throws Exception {
+    public void testSingleSubscribe() {
         final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
                 .setContentUri(URI)
                 .setProjection(new String[]{MediaStore.Audio.Media._ID})
