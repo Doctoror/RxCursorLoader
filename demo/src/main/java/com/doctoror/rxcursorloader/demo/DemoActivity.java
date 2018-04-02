@@ -15,8 +15,6 @@
  */
 package com.doctoror.rxcursorloader.demo;
 
-import com.doctoror.rxcursorloader.RxCursorLoader;
-
 import android.app.Activity;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -24,6 +22,8 @@ import android.support.annotation.NonNull;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.ViewAnimator;
+
+import com.doctoror.rxcursorloader.RxCursorLoader;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -78,8 +78,7 @@ public final class DemoActivity extends Activity {
 
     private void subscribe() {
         mCursorDisposable = RxCursorLoader.create(getContentResolver(),
-                ArtistsQuery.mQuery)
-                .subscribeOn(Schedulers.io())
+                ArtistsQuery.mQuery, Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onCursorLoaded, this::onCursorLoadFailed);
     }

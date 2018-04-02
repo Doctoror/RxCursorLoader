@@ -16,29 +16,21 @@
 package com.doctoror.rxcursorloader;
 
 import android.content.ContentResolver;
-import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import java.util.Arrays;
 
 import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Observer;
+import io.reactivex.Scheduler;
 import io.reactivex.Single;
-import io.reactivex.SingleEmitter;
-import io.reactivex.SingleOnSubscribe;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * An RX replacement for {@link android.content.CursorLoader}
@@ -58,7 +50,7 @@ import io.reactivex.functions.Consumer;
  *     .create();
  * }
  * </pre></blockquote>
- *
+ * <p>
  * If you need to load only once, use {@link #single(ContentResolver, Query)}.
  * <br><br>
  * If you need the loader to register ContentObserver and reload cursor passing it to onNext()
@@ -67,7 +59,7 @@ import io.reactivex.functions.Consumer;
  */
 public final class RxCursorLoader {
 
-    private static final String TAG = "RxCursorLoader";
+    static final String TAG = "RxCursorLoader";
 
     /**
      * Set this to true to enable logging
@@ -76,6 +68,13 @@ public final class RxCursorLoader {
 
     private RxCursorLoader() {
         throw new UnsupportedOperationException();
+    }
+
+    @NonNull
+    public static Observable<Cursor> create(
+            @NonNull final ContentResolver resolver,
+            @NonNull final Query query) {
+        return create(resolver, query, Schedulers.io());
     }
 
     /**
@@ -93,7 +92,7 @@ public final class RxCursorLoader {
      * running a query
      * <br>
      * <br><b>You must call {@link Disposable#dispose()} when finished.</b>
-     *
+     * <p>
      * <br><blockquote><pre>
      * protected void onStop() {
      *     super.onStop();
@@ -104,29 +103,19 @@ public final class RxCursorLoader {
      * }
      * </pre></blockquote>
      *
-     * @param resolver {@link ContentResolver} to use
-     * @param query    the {@link Query} to use
+     * @param resolver  {@link ContentResolver} to use
+     * @param query     the {@link Query} to use
+     * @param scheduler the {@link Scheduler} to emit items from. This will automatically set
+     *                  {@link Observable#subscribeOn(Scheduler)} with this scheduler. Even if you change the
+     *                  scheduler afterwards, the subsequent items will be still emitted from this scheduler.
      * @return new {@link Observable}.
      */
     @NonNull
-    public static Observable<Cursor> create(@NonNull final ContentResolver resolver,
-            @NonNull final Query query) {
-        //noinspection ConstantConditions
-        if (resolver == null) {
-            throw new NullPointerException("ContentResolver param must not be null");
-        }
-        //noinspection ConstantConditions
-        if (query == null) {
-            throw new NullPointerException("Params param must not be null");
-        }
-        final CursorLoaderOnSubscribe onSubscribe = new CursorLoaderOnSubscribe(resolver, query);
-        return Observable.create(onSubscribe)
-                .doOnDispose(new Action() {
-                    @Override
-                    public void run() {
-                        onSubscribe.release();
-                    }
-                });
+    public static Observable<Cursor> create(
+            @NonNull final ContentResolver resolver,
+            @NonNull final Query query,
+            @NonNull final Scheduler scheduler) {
+        return RxCursorLoaderObservableFactory.create(resolver, query, scheduler);
     }
 
     /**
@@ -139,156 +128,10 @@ public final class RxCursorLoader {
      * @return new {@link Single}.
      */
     @NonNull
-    public static Single<Cursor> single(@NonNull final ContentResolver resolver,
+    public static Single<Cursor> single(
+            @NonNull final ContentResolver resolver,
             @NonNull final Query query) {
-        //noinspection ConstantConditions
-        if (resolver == null) {
-            throw new NullPointerException("ContentResolver param must not be null");
-        }
-        //noinspection ConstantConditions
-        if (query == null) {
-            throw new NullPointerException("Params param must not be null");
-        }
-
-        return Single.create(new CursorLoaderOnSubscribeSingle(resolver, query));
-    }
-
-    private static final class CursorLoaderOnSubscribe
-            implements ObservableOnSubscribe<Cursor> {
-
-        private final Object mLock = new Object();
-
-        @NonNull
-        private final ContentResolver mContentResolver;
-
-        @NonNull
-        private final Query mQuery;
-
-        private Handler mHandler;
-
-        private ObservableEmitter<Cursor> mEmitter;
-
-        private ContentObserver mResolverObserver;
-
-        CursorLoaderOnSubscribe(@NonNull final ContentResolver resolver,
-                @NonNull final Query query) {
-            mContentResolver = resolver;
-            mQuery = query;
-        }
-
-        @Override
-        public void subscribe(final ObservableEmitter<Cursor> emitter) {
-            final HandlerThread handlerThread = new HandlerThread(TAG.concat(".HandlerThread"));
-            handlerThread.start();
-            synchronized (mLock) {
-                mHandler = new Handler(handlerThread.getLooper());
-                mEmitter = emitter;
-                mContentResolver.registerContentObserver(mQuery.contentUri, true,
-                        getResolverObserver());
-            }
-            reload();
-        }
-
-        private void release() {
-            synchronized (mLock) {
-                if (mResolverObserver != null) {
-                    mContentResolver.unregisterContentObserver(mResolverObserver);
-                    mResolverObserver = null;
-                }
-
-                mEmitter = null;
-
-                if (mHandler != null) {
-                    final Looper looper = mHandler.getLooper();
-                    if (looper != null) {
-                        looper.quit();
-                    }
-                }
-                mHandler = null;
-            }
-        }
-
-        /**
-         * Loads new {@link Cursor}.
-         *
-         * This must be called from {@link #subscribe(ObservableEmitter)} thread
-         */
-        private synchronized void reload() {
-            synchronized (mLock) {
-                if (LOG) {
-                    Log.d(TAG, mQuery.toString());
-                }
-
-                final Cursor c = mContentResolver.query(
-                        mQuery.contentUri,
-                        mQuery.projection,
-                        mQuery.selection,
-                        mQuery.selectionArgs,
-                        mQuery.sortOrder);
-
-                if (mEmitter != null && !mEmitter.isDisposed()) {
-                    if (c != null) {
-                        mEmitter.onNext(c);
-                    } else {
-                        mEmitter.onError(new QueryReturnedNullException());
-                    }
-                }
-            }
-        }
-
-        /**
-         * Creates the {@link ContentObserver} to observe {@link Cursor} changes.
-         * It must be initialized from thread in which {@link #subscribe(ObservableEmitter)} is
-         * called.
-         *
-         * @return the {@link ContentObserver} to observe {@link Cursor} changes.
-         */
-        @NonNull
-        private ContentObserver getResolverObserver() {
-            if (mResolverObserver == null) {
-                mResolverObserver = new ContentObserver(mHandler) {
-
-                    @Override
-                    public void onChange(final boolean selfChange) {
-                        super.onChange(selfChange);
-                        reload();
-                    }
-                };
-            }
-            return mResolverObserver;
-        }
-    }
-
-    private static final class CursorLoaderOnSubscribeSingle
-            implements SingleOnSubscribe<Cursor> {
-
-        @NonNull
-        private final ContentResolver mContentResolver;
-
-        @NonNull
-        private final Query mQuery;
-
-        CursorLoaderOnSubscribeSingle(@NonNull final ContentResolver resolver,
-                @NonNull final Query query) {
-            mContentResolver = resolver;
-            mQuery = query;
-        }
-
-        @Override
-        public void subscribe(final SingleEmitter<Cursor> emitter) {
-            if (LOG) {
-                Log.d(TAG, mQuery.toString());
-            }
-
-            final Cursor c = mContentResolver.query(
-                    mQuery.contentUri,
-                    mQuery.projection,
-                    mQuery.selection,
-                    mQuery.selectionArgs,
-                    mQuery.sortOrder);
-
-            emitter.onSuccess(c);
-        }
+        return RxCursorLoaderSingleFactory.single(resolver, query);
     }
 
     /**
