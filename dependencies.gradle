@@ -13,7 +13,7 @@ ext {
     androidCompileSdkVersion = 27
 
     //Libraries
-    supportVersion = '27.0.2'
+    supportVersion = '27.1.0'
     rxJavaVersion = '2.1.8'
     rxAndroidVersion = '2.0.1'
 
