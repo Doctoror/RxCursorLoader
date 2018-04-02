@@ -195,6 +195,7 @@ public final class RxCursorLoader {
                     mResolverObserver = null;
                 }
                 mEmitter = null;
+                mHandler.getLooper().quit();
             }
         }
 
