@@ -21,18 +21,18 @@ ext {
     testRunnerVersion = '1.0.1'
 
     demoDependencies = [
-            rxJava              : "io.reactivex.rxjava2:rxjava:$rxJavaVersion",
-            rxAndroid           : "io.reactivex.rxjava2:rxandroid:$rxAndroidVersion",
-            supportV4           : "com.android.support:support-v4:$supportVersion",
+            rxJava   : "io.reactivex.rxjava2:rxjava:$rxJavaVersion",
+            rxAndroid: "io.reactivex.rxjava2:rxandroid:$rxAndroidVersion",
+            supportV4: "com.android.support:support-v4:$supportVersion",
     ]
 
     libraryDependencies = [
-            annotations : "com.android.support:support-annotations:$supportVersion",
-            rxJava      : "io.reactivex.rxjava2:rxjava:$rxJavaVersion"
+            annotations: "com.android.support:support-annotations:$supportVersion",
+            rxJava     : "io.reactivex.rxjava2:rxjava:$rxJavaVersion"
     ]
 
     libraryTestDependencies = [
-            testRunner     : "com.android.support.test:runner:$testRunnerVersion",
-            testRules      : "com.android.support.test:rules:$testRunnerVersion",
+            testRunner: "com.android.support.test:runner:$testRunnerVersion",
+            testRules : "com.android.support.test:rules:$testRunnerVersion",
     ]
 }
