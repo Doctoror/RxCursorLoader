@@ -25,8 +25,8 @@ allprojects {
     }
 
     ext {
-        androidVersionCode = 16
-        androidVersionName = "2.0.4"
+        androidVersionCode = 17
+        androidVersionName = "2.1.0"
     }
 }
 
