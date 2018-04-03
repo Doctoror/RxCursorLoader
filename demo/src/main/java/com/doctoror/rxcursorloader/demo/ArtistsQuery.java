@@ -41,7 +41,7 @@ final class ArtistsQuery {
     static final int COLUMN_NUMBER_OF_ALBUMS = 1;
     static final int COLUMN_ARTIST = 2;
 
-    static RxCursorLoader.Query mQuery = new RxCursorLoader.Query.Builder()
+    static final RxCursorLoader.Query QUERY = new RxCursorLoader.Query.Builder()
             .setContentUri(URI)
             .setProjection(COLUMNS)
             .setSortOrder(MediaStore.Audio.Artists.ARTIST)

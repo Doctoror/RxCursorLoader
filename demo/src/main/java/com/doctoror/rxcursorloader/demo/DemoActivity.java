@@ -25,6 +25,7 @@ import android.widget.ViewAnimator;
 
 import com.doctoror.rxcursorloader.RxCursorLoader;
 
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
@@ -77,8 +78,8 @@ public final class DemoActivity extends Activity {
     }
 
     private void subscribe() {
-        mCursorDisposable = RxCursorLoader.create(getContentResolver(),
-                ArtistsQuery.mQuery, Schedulers.io())
+        mCursorDisposable = RxCursorLoader.flowable(getContentResolver(),
+                ArtistsQuery.QUERY, Schedulers.io(), BackpressureStrategy.LATEST)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onCursorLoaded, this::onCursorLoadFailed);
     }
