@@ -16,7 +16,6 @@
 package com.doctoror.rxcursorloader;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import android.database.Cursor;
@@ -27,37 +26,29 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.test.mock.MockContentResolver;
 
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.observers.BaseTestConsumer;
 import io.reactivex.observers.TestObserver;
+import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subscribers.TestSubscriber;
 
 import static org.junit.Assert.*;
 
-/**
- * Instrumentation test, which will execute on an Android device.
- *
- * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
- */
 public final class RxCursorLoaderInstrumentedTest {
 
     private static final Uri URI = new Uri.Builder().scheme("content")
             .authority(TestContentProvider.AUTHORITY).build();
 
-    static final String[] QUERY_COLUMNS = new String[]{
-            MediaStore.Audio.Artists._ID,
-            MediaStore.Audio.Artists.NUMBER_OF_ALBUMS,
-            MediaStore.Audio.Artists.ARTIST
-    };
-
-    private MockContentResolver mContentResolver;
+    private final MockContentResolver mContentResolver = new MockContentResolver();
 
     @Before
     public void setup() {
-        mContentResolver = new MockContentResolver();
         mContentResolver.addProvider(TestContentProvider.AUTHORITY, new TestContentProvider());
     }
 
-    private void assertHasValidCursor(@NonNull final TestObserver<Cursor> observer) {
+    private void assertHasValidCursor(@NonNull final BaseTestConsumer observer) {
         observer.assertValueCount(1);
-        assertValidCursor(observer.values().get(0));
+        assertValidCursor((Cursor) observer.values().get(0));
     }
 
     private void assertValidCursor(@Nullable final Cursor c) {
@@ -70,20 +61,27 @@ public final class RxCursorLoaderInstrumentedTest {
     @Test(expected = IllegalStateException.class)
     public void testNoUriBuilder() {
         //noinspection ConstantConditions
-        RxCursorLoader.create(mContentResolver, new RxCursorLoader.Query.Builder().create());
+        RxCursorLoader.flowable(
+                mContentResolver,
+                new RxCursorLoader.Query.Builder().create(),
+                Schedulers.trampoline(),
+                BackpressureStrategy.ERROR);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testNullContentObserver() {
+    public void testNullContentResolver() {
+        final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
+                .setContentUri(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI).create();
         //noinspection ConstantConditions
-        RxCursorLoader.create(null, new RxCursorLoader.Query.Builder()
-                .setContentUri(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI).create());
+        RxCursorLoader.flowable(
+                null, query, Schedulers.trampoline(), BackpressureStrategy.ERROR);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testNullParams() {
+    public void testNullQuery() {
         //noinspection ConstantConditions
-        RxCursorLoader.create(mContentResolver, null);
+        RxCursorLoader.flowable(
+                mContentResolver, null, Schedulers.trampoline(), BackpressureStrategy.ERROR);
     }
 
     @Test
@@ -107,17 +105,22 @@ public final class RxCursorLoaderInstrumentedTest {
     }
 
     @Test
-    @Ignore // FIXME
-    public void testCreateSubscribe() {
+    public void testFlowableSubscribe() {
         final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
                 .setContentUri(URI)
                 .setProjection(new String[]{MediaStore.Audio.Media._ID})
                 .create();
 
-        final TestObserver<Cursor> observer = RxCursorLoader.create(mContentResolver, query).test();
+        final TestSubscriber<Cursor> observer = RxCursorLoader.flowable(
+                mContentResolver,
+                query,
+                Schedulers.trampoline(),
+                BackpressureStrategy.ERROR).test();
+
         observer.assertNoErrors();
         observer.assertNotComplete();
         assertHasValidCursor(observer);
+
         observer.dispose();
     }
 
@@ -132,6 +135,7 @@ public final class RxCursorLoaderInstrumentedTest {
         observer.assertNoErrors();
         observer.assertComplete();
         assertHasValidCursor(observer);
+
         observer.dispose();
     }
 }
