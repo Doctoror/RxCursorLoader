@@ -22,7 +22,7 @@ compile 'com.github.doctoror.rxcursorloader:library:1.1.5'
 
 Create a Query using Query.Builder. The required parameter is only a content URI.
 ```java
-final CursorLoaderObservable.Query query = new CursorLoaderObservable.Query.Builder()
+final RxCursorLoader.Query query = new RxCursorLoader.Query.Builder()
         .setContentUri(MediaStore.Audio.Media.INTERNAL_CONTENT_URI)
         .setProjection(new String[]{MediaStore.Audio.Media._ID})
         .setSortOrder(MediaStore.Audio.Artists.ARTIST)
@@ -45,7 +45,7 @@ RxCursorLoader.single(getContentResolver(), query)
 Note that unlike CursorLoader, this does not close the Cursor for you, so make sure to close old cursor once onNext() is called.
 
 ```java
-mCursorDisposable = CursorLoaderObservable.create(getContentResolver(), params, Schedulers.io())
+mCursorDisposable = RxCursorLoader.flowable(getContentResolver(), params, Schedulers.io(), BackpressureStrategy.LATEST)
     .observeOn(AndroidSchedulers.mainThread())
     .subscribe(c -> mCursorAdapter.changeCursor(c));
 ```
