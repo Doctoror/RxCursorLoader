@@ -24,22 +24,24 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.FlowableEmitter;
+import io.reactivex.FlowableOnSubscribe;
 import io.reactivex.Scheduler;
 import io.reactivex.functions.Action;
 
-import static com.doctoror.rxcursorloader.RxCursorLoader.LOG;
+import static com.doctoror.rxcursorloader.RxCursorLoader.isDebugLoggingEnabled;
 import static com.doctoror.rxcursorloader.RxCursorLoader.TAG;
 
-final class RxCursorLoaderObservableFactory {
+final class RxCursorLoaderFlowableFactory {
 
     @NonNull
-    static Observable<Cursor> create(
+    static Flowable<Cursor> create(
             @NonNull final ContentResolver resolver,
             @NonNull final RxCursorLoader.Query query,
-            @NonNull final Scheduler scheduler) {
+            @NonNull final Scheduler scheduler,
+            @NonNull final BackpressureStrategy backpressureStrategy) {
         //noinspection ConstantConditions
         if (resolver == null) {
             throw new NullPointerException("ContentResolver param must not be null");
@@ -52,10 +54,10 @@ final class RxCursorLoaderObservableFactory {
         final CursorLoaderOnSubscribe onSubscribe = new CursorLoaderOnSubscribe(
                 resolver, query, scheduler);
 
-        return Observable
-                .create(onSubscribe)
+        return Flowable
+                .create(onSubscribe, backpressureStrategy)
                 .subscribeOn(scheduler)
-                .doOnDispose(new Action() {
+                .doOnTerminate(new Action() {
                     @Override
                     public void run() {
                         onSubscribe.release();
@@ -64,7 +66,7 @@ final class RxCursorLoaderObservableFactory {
     }
 
     private static final class CursorLoaderOnSubscribe
-            implements ObservableOnSubscribe<Cursor> {
+            implements FlowableOnSubscribe<Cursor> {
 
         private final Object mLock = new Object();
 
@@ -79,7 +81,7 @@ final class RxCursorLoaderObservableFactory {
 
         private Handler mHandler;
 
-        private ObservableEmitter<Cursor> mEmitter;
+        private FlowableEmitter<Cursor> mEmitter;
 
         private ContentObserver mResolverObserver;
 
@@ -93,7 +95,7 @@ final class RxCursorLoaderObservableFactory {
         }
 
         @Override
-        public void subscribe(final ObservableEmitter<Cursor> emitter) {
+        public void subscribe(final FlowableEmitter<Cursor> emitter) {
             final HandlerThread handlerThread = new HandlerThread(TAG.concat(".HandlerThread"));
             handlerThread.start();
             synchronized (mLock) {
@@ -127,11 +129,11 @@ final class RxCursorLoaderObservableFactory {
         /**
          * Loads new {@link Cursor}.
          * <p>
-         * This must be called from {@link #subscribe(ObservableEmitter)} thread
+         * This must be called from {@link #subscribe(FlowableEmitter)} thread
          */
         private synchronized void reload() {
             synchronized (mLock) {
-                if (LOG) {
+                if (isDebugLoggingEnabled()) {
                     Log.d(TAG, mQuery.toString());
                 }
 
@@ -142,7 +144,7 @@ final class RxCursorLoaderObservableFactory {
                         mQuery.selectionArgs,
                         mQuery.sortOrder);
 
-                if (mEmitter != null && !mEmitter.isDisposed()) {
+                if (mEmitter != null && !mEmitter.isCancelled()) {
                     if (c != null) {
                         mEmitter.onNext(c);
                     } else {
@@ -154,7 +156,7 @@ final class RxCursorLoaderObservableFactory {
 
         /**
          * Creates the {@link ContentObserver} to observe {@link Cursor} changes.
-         * It must be initialized from thread in which {@link #subscribe(ObservableEmitter)} is
+         * It must be initialized from thread in which {@link #subscribe(FlowableEmitter)} is
          * called.
          *
          * @return the {@link ContentObserver} to observe {@link Cursor} changes.

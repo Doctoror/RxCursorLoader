@@ -24,6 +24,8 @@ import android.support.annotation.NonNull;
 
 import java.util.Arrays;
 
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.Scheduler;
@@ -55,45 +57,67 @@ import io.reactivex.schedulers.Schedulers;
  * <br><br>
  * If you need the loader to register ContentObserver and reload cursor passing it to onNext()
  * every time content changes, like {@link android.content.CursorLoader}, use
- * {@link #create(ContentResolver, Query)}.
+ * {@link #flowable(ContentResolver, Query, Scheduler, BackpressureStrategy)}.
  */
 public final class RxCursorLoader {
 
     static final String TAG = "RxCursorLoader";
 
     /**
-     * Set this to true to enable logging
+     * Set this to true to enable debug logging
      */
-    public static boolean LOG = false;
+    private static boolean LOG_DEBUG = false;
+
+    /**
+     * Used to enable/disable debug level logs.
+     * <p>
+     * Disabled by default.
+     */
+    public static void setDebugLoggingEnabled(final boolean loggingEnabled) {
+        LOG_DEBUG = loggingEnabled;
+    }
+
+    static boolean isDebugLoggingEnabled() {
+        return LOG_DEBUG;
+    }
 
     private RxCursorLoader() {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * @deprecated use {@link #flowable(ContentResolver, Query, Scheduler, BackpressureStrategy)} instead.
+     */
+    @Deprecated
     @NonNull
     public static Observable<Cursor> create(
             @NonNull final ContentResolver resolver,
             @NonNull final Query query) {
-        return create(resolver, query, Schedulers.io());
+        return RxCursorLoaderFlowableFactory
+                .create(resolver, query, Schedulers.io(), BackpressureStrategy.MISSING)
+                .toObservable();
     }
 
     /**
-     * Create a new {@link Observable} that emits items from a {@link ContentResolver} query.
-     * This acts like {@link android.content.CursorLoader}.<br>
-     * When a non-null Cursor is loaded, it is passed to {@link Observer#onNext(Object)}}. If the
-     * query returns null, {@link QueryReturnedNullException} is passed to {@link
-     * Observer#onError(Throwable)}
-     * <br>
-     * Every time the content changes, the Cursor will be reloaded and passed to {@link
-     * Observer#onNext(Object)}. Make sure to close old cursor because Cursors are not automatically
-     * closed.
-     * <br>
-     * {@link Observer#onError(Throwable)}} is called if {@link RuntimeException} is caught when
-     * running a query
-     * <br>
-     * <br><b>You must call {@link Disposable#dispose()} when finished.</b>
+     * Create a new {@link Flowable} that emits items from a {@link ContentResolver} query.
+     * This acts like {@link android.content.CursorLoader}.
      * <p>
-     * <br><blockquote><pre>
+     * When a non-null Cursor is loaded, it is passed to {@link Observer#onNext(Object)}}.
+     * <p>
+     * If the query returns null, {@link QueryReturnedNullException} is passed to
+     * {@link Observer#onError(Throwable)}.
+     * <p>
+     * Every time the content changes, the Cursor will be reloaded and passed to {@link
+     * Observer#onNext(Object)}.
+     * <p>
+     * Make sure to close old cursor because cursors are not automatically closed
+     * <p>
+     * {@link Observer#onError(Throwable)}} is called if {@link RuntimeException} is caught when running a
+     * query.
+     * <p>
+     * <b>You must call {@link Disposable#dispose()} when finished.</b>
+     * <p>
+     * <blockquote><pre>
      * protected void onStop() {
      *     super.onStop();
      *     // stop using Cursor and close it
@@ -106,16 +130,18 @@ public final class RxCursorLoader {
      * @param resolver  {@link ContentResolver} to use
      * @param query     the {@link Query} to use
      * @param scheduler the {@link Scheduler} to emit items from. This will automatically set
-     *                  {@link Observable#subscribeOn(Scheduler)} with this scheduler. Even if you change the
+     *                  {@link Flowable#subscribeOn(Scheduler)} with this scheduler. Even if you change the
      *                  scheduler afterwards, the subsequent items will be still emitted from this scheduler.
-     * @return new {@link Observable}.
+     * @return new {@link Flowable}.
      */
     @NonNull
-    public static Observable<Cursor> create(
+    public static Flowable<Cursor> flowable(
             @NonNull final ContentResolver resolver,
             @NonNull final Query query,
-            @NonNull final Scheduler scheduler) {
-        return RxCursorLoaderObservableFactory.create(resolver, query, scheduler);
+            @NonNull final Scheduler scheduler,
+            @NonNull final BackpressureStrategy backpressureStrategy) {
+        return RxCursorLoaderFlowableFactory
+                .create(resolver, query, scheduler, backpressureStrategy);
     }
 
     /**

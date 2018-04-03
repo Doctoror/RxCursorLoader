@@ -24,7 +24,7 @@ import io.reactivex.Single;
 import io.reactivex.SingleEmitter;
 import io.reactivex.SingleOnSubscribe;
 
-import static com.doctoror.rxcursorloader.RxCursorLoader.LOG;
+import static com.doctoror.rxcursorloader.RxCursorLoader.isDebugLoggingEnabled;
 import static com.doctoror.rxcursorloader.RxCursorLoader.TAG;
 
 final class RxCursorLoaderSingleFactory {
@@ -63,7 +63,7 @@ final class RxCursorLoaderSingleFactory {
 
         @Override
         public void subscribe(final SingleEmitter<Cursor> emitter) {
-            if (LOG) {
+            if (isDebugLoggingEnabled()) {
                 Log.d(TAG, mQuery.toString());
             }
 
