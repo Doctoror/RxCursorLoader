@@ -74,7 +74,11 @@ final class RxCursorLoaderSingleFactory {
                     mQuery.selectionArgs,
                     mQuery.sortOrder);
 
-            emitter.onSuccess(c);
+            if (c != null) {
+                emitter.onSuccess(c);
+            } else {
+                emitter.onError(new QueryReturnedNullException());
+            }
         }
     }
 }
