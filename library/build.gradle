@@ -13,8 +13,6 @@ android {
 
         versionCode globalConfiguration["androidVersionCode"]
         versionName globalConfiguration["androidVersionName"]
-
-        testInstrumentationRunner globalConfiguration["testInstrumentationRunner"]
     }
 
     lintOptions {
@@ -35,9 +33,9 @@ dependencies {
     def d = rootProject.ext.libraryDependencies
     def td = rootProject.ext.libraryTestDependencies
 
-    androidTestImplementation d.annotations
-    androidTestImplementation td.testRunner
-    androidTestImplementation td.testRules
+    testImplementation td.junit
+    testImplementation td.mockito
+    testImplementation td.robolectric
 
     javadocDeps d.annotations
     javadocDeps d.rxJava
