@@ -44,11 +44,11 @@ final class RxCursorLoaderFlowableFactory {
             @NonNull final BackpressureStrategy backpressureStrategy) {
         //noinspection ConstantConditions
         if (resolver == null) {
-            throw new NullPointerException("ContentResolver param must not be null");
+            throw new NullPointerException("ContentResolver must not be null");
         }
         //noinspection ConstantConditions
         if (query == null) {
-            throw new NullPointerException("Params param must not be null");
+            throw new NullPointerException("Query must not be null");
         }
 
         final CursorLoaderOnSubscribe onSubscribe = new CursorLoaderOnSubscribe(
