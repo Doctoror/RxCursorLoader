@@ -67,7 +67,7 @@ final class RxCursorLoaderFlowableFactory {
     private static final class CursorLoaderOnSubscribe
             implements FlowableOnSubscribe<Cursor> {
 
-        private final Object mLock = new Object();
+        private final Object mEmitterLock = new Object();
 
         @NonNull
         private final ContentResolver mContentResolver;
@@ -94,19 +94,18 @@ final class RxCursorLoaderFlowableFactory {
 
         @Override
         public void subscribe(final FlowableEmitter<Cursor> emitter) {
-            synchronized (mLock) {
+            synchronized (mEmitterLock) {
                 mEmitter = emitter;
-                mContentResolver.registerContentObserver(mQuery.contentUri, true,
-                        mContentObserver);
             }
+            mContentResolver.registerContentObserver(
+                    mQuery.contentUri, true, mContentObserver);
             reload();
         }
 
         private void release() {
-            synchronized (mLock) {
-                mContentResolver.unregisterContentObserver(mContentObserver);
+            mContentResolver.unregisterContentObserver(mContentObserver);
+            synchronized (mEmitterLock) {
                 mEmitter = null;
-                mHandler.removeCallbacksAndMessages(null);
             }
         }
 
@@ -116,18 +115,18 @@ final class RxCursorLoaderFlowableFactory {
          * This must be called from {@link #subscribe(FlowableEmitter)} thread
          */
         private synchronized void reload() {
-            synchronized (mLock) {
-                if (isDebugLoggingEnabled()) {
-                    Log.d(TAG, mQuery.toString());
-                }
+            if (isDebugLoggingEnabled()) {
+                Log.d(TAG, mQuery.toString());
+            }
 
-                final Cursor c = mContentResolver.query(
-                        mQuery.contentUri,
-                        mQuery.projection,
-                        mQuery.selection,
-                        mQuery.selectionArgs,
-                        mQuery.sortOrder);
+            final Cursor c = mContentResolver.query(
+                    mQuery.contentUri,
+                    mQuery.projection,
+                    mQuery.selection,
+                    mQuery.selectionArgs,
+                    mQuery.sortOrder);
 
+            synchronized (mEmitterLock) {
                 if (mEmitter != null && !mEmitter.isCancelled()) {
                     if (c != null) {
                         mEmitter.onNext(c);
