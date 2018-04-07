@@ -31,8 +31,8 @@ import io.reactivex.FlowableOnSubscribe;
 import io.reactivex.Scheduler;
 import io.reactivex.functions.Action;
 
-import static com.doctoror.rxcursorloader.RxCursorLoader.isDebugLoggingEnabled;
 import static com.doctoror.rxcursorloader.RxCursorLoader.TAG;
+import static com.doctoror.rxcursorloader.RxCursorLoader.isDebugLoggingEnabled;
 
 final class RxCursorLoaderFlowableFactory {
 
@@ -57,7 +57,7 @@ final class RxCursorLoaderFlowableFactory {
         return Flowable
                 .create(onSubscribe, backpressureStrategy)
                 .subscribeOn(scheduler)
-                .doOnTerminate(new Action() {
+                .doFinally(new Action() {
                     @Override
                     public void run() {
                         onSubscribe.release();
