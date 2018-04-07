@@ -19,7 +19,6 @@ import android.content.ContentResolver;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -79,11 +78,10 @@ final class RxCursorLoaderFlowableFactory {
         @NonNull
         private final Scheduler mScheduler;
 
-        private Handler mHandler;
+        @NonNull
+        private final Handler mHandler = new Handler(Looper.getMainLooper());
 
         private FlowableEmitter<Cursor> mEmitter;
-
-        private ContentObserver mResolverObserver;
 
         CursorLoaderOnSubscribe(
                 @NonNull final ContentResolver resolver,
@@ -91,38 +89,24 @@ final class RxCursorLoaderFlowableFactory {
                 @NonNull final Scheduler scheduler) {
             mContentResolver = resolver;
             mQuery = query;
-            this.mScheduler = scheduler;
+            mScheduler = scheduler;
         }
 
         @Override
         public void subscribe(final FlowableEmitter<Cursor> emitter) {
-            final HandlerThread handlerThread = new HandlerThread(TAG.concat(".HandlerThread"));
-            handlerThread.start();
             synchronized (mLock) {
-                mHandler = new Handler(handlerThread.getLooper());
                 mEmitter = emitter;
                 mContentResolver.registerContentObserver(mQuery.contentUri, true,
-                        getResolverObserver());
+                        mContentObserver);
             }
             reload();
         }
 
         private void release() {
             synchronized (mLock) {
-                if (mResolverObserver != null) {
-                    mContentResolver.unregisterContentObserver(mResolverObserver);
-                    mResolverObserver = null;
-                }
-
+                mContentResolver.unregisterContentObserver(mContentObserver);
                 mEmitter = null;
-
-                if (mHandler != null) {
-                    final Looper looper = mHandler.getLooper();
-                    if (looper != null) {
-                        looper.quit();
-                    }
-                }
-                mHandler = null;
+                mHandler.removeCallbacksAndMessages(null);
             }
         }
 
@@ -154,27 +138,13 @@ final class RxCursorLoaderFlowableFactory {
             }
         }
 
-        /**
-         * Creates the {@link ContentObserver} to observe {@link Cursor} changes.
-         * It must be initialized from thread in which {@link #subscribe(FlowableEmitter)} is
-         * called.
-         *
-         * @return the {@link ContentObserver} to observe {@link Cursor} changes.
-         */
-        @NonNull
-        private ContentObserver getResolverObserver() {
-            if (mResolverObserver == null) {
-                mResolverObserver = new ContentObserver(mHandler) {
+        private final ContentObserver mContentObserver = new ContentObserver(mHandler) {
 
-                    @Override
-                    public void onChange(final boolean selfChange) {
-                        super.onChange(selfChange);
-                        mScheduler.scheduleDirect(mReloadRunnable);
-                    }
-                };
+            @Override
+            public void onChange(final boolean selfChange) {
+                mScheduler.scheduleDirect(mReloadRunnable);
             }
-            return mResolverObserver;
-        }
+        };
 
         private final Runnable mReloadRunnable = new Runnable() {
             @Override
