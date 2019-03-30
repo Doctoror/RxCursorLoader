@@ -24,6 +24,7 @@ import android.os.Parcelable;
 import java.util.Arrays;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -231,7 +232,7 @@ public final class RxCursorLoader {
         }
 
         @Override
-        public void writeToParcel(final Parcel p, final int i) {
+        public void writeToParcel(@NonNull final Parcel p, final int i) {
             p.writeParcelable(contentUri, 0);
             p.writeStringArray(projection);
             p.writeString(selection);
@@ -335,25 +336,25 @@ public final class RxCursorLoader {
             }
 
             @NonNull
-            public Builder setProjection(final String[] projection) {
+            public Builder setProjection(@Nullable final String[] projection) {
                 mProjection = projection;
                 return this;
             }
 
             @NonNull
-            public Builder setSelection(final String selection) {
+            public Builder setSelection(@Nullable final String selection) {
                 mSelection = selection;
                 return this;
             }
 
             @NonNull
-            public Builder setSelectionArgs(final String[] selectionArgs) {
+            public Builder setSelectionArgs(@Nullable final String[] selectionArgs) {
                 mSelectionArgs = selectionArgs;
                 return this;
             }
 
             @NonNull
-            public Builder setSortOrder(final String sortOrder) {
+            public Builder setSortOrder(@Nullable final String sortOrder) {
                 mSortOrder = sortOrder;
                 return this;
             }

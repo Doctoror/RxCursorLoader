@@ -76,7 +76,7 @@ final class RxCursorLoaderFlowableFactory {
         private final RxCursorLoader.Query mQuery;
 
         @NonNull
-        private final Scheduler mScheduler;
+        final Scheduler mScheduler;
 
         @NonNull
         private final Handler mHandler = new Handler(Looper.getMainLooper());
@@ -102,7 +102,7 @@ final class RxCursorLoaderFlowableFactory {
             reload();
         }
 
-        private void release() {
+        void release() {
             mContentResolver.unregisterContentObserver(mContentObserver);
             synchronized (mEmitterLock) {
                 mEmitter = null;
@@ -114,7 +114,7 @@ final class RxCursorLoaderFlowableFactory {
          * <p>
          * This must be called from {@link #subscribe(FlowableEmitter)} thread
          */
-        private synchronized void reload() {
+        synchronized void reload() {
             if (isDebugLoggingEnabled()) {
                 Log.d(TAG, mQuery.toString());
             }
@@ -145,7 +145,7 @@ final class RxCursorLoaderFlowableFactory {
             }
         };
 
-        private final Runnable mReloadRunnable = new Runnable() {
+        final Runnable mReloadRunnable = new Runnable() {
             @Override
             public void run() {
                 reload();
