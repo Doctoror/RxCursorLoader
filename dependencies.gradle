@@ -20,7 +20,7 @@ ext {
 
     //Testing
     jUnitVersion = '4.12'
-    mockitoVersion = '2.17.0'
+    mockitoVersion = '2.25.1'
     robolectricVersion = '4.2.1'
 
     demoDependencies = [
