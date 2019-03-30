@@ -18,13 +18,13 @@ package com.doctoror.rxcursorloader.demo;
 import android.app.Activity;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.ViewAnimator;
 
 import com.doctoror.rxcursorloader.RxCursorLoader;
 
+import androidx.annotation.NonNull;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;

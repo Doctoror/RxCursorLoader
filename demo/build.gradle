@@ -34,7 +34,8 @@ dependencies {
     def d = rootProject.ext.demoDependencies
 
     implementation project(':library')
-    implementation d.supportV4
+    implementation d.annotations
+    implementation d.cursorAdapter
     implementation d.rxJava
     implementation d.rxAndroid
 }

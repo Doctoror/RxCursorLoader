@@ -17,15 +17,15 @@ package com.doctoror.rxcursorloader;
 
 import android.content.ContentResolver;
 import android.database.Cursor;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import io.reactivex.Single;
 import io.reactivex.SingleEmitter;
 import io.reactivex.SingleOnSubscribe;
 
-import static com.doctoror.rxcursorloader.RxCursorLoader.isDebugLoggingEnabled;
 import static com.doctoror.rxcursorloader.RxCursorLoader.TAG;
+import static com.doctoror.rxcursorloader.RxCursorLoader.isDebugLoggingEnabled;
 
 final class RxCursorLoaderSingleFactory {
 

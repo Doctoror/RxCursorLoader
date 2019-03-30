@@ -5,8 +5,9 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public final class DemoContentProvider extends ContentProvider {
 
@@ -25,22 +26,22 @@ public final class DemoContentProvider extends ContentProvider {
             @Nullable String[] selectionArgs,
             @Nullable String sortOrder) {
         final MatrixCursor demoResult = new MatrixCursor(ArtistsQuery.COLUMNS);
-        demoResult.addRow(new String[] {
+        demoResult.addRow(new String[]{
                 "1",
                 "3",
                 "Darkspace"
         });
-        demoResult.addRow(new String[] {
+        demoResult.addRow(new String[]{
                 "2",
                 "2",
                 "Paysage d'Hiver"
         });
-        demoResult.addRow(new String[] {
+        demoResult.addRow(new String[]{
                 "3",
                 "6",
                 "KMFDM"
         });
-        demoResult.addRow(new String[] {
+        demoResult.addRow(new String[]{
                 "4",
                 "4",
                 "Mechina"
@@ -60,13 +61,13 @@ public final class DemoContentProvider extends ContentProvider {
 
     @Override
     public int delete(@NonNull Uri uri, @Nullable String selection,
-            @Nullable String[] selectionArgs) {
+                      @Nullable String[] selectionArgs) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection,
-            @Nullable String[] selectionArgs) {
+                      @Nullable String[] selectionArgs) {
         throw new UnsupportedOperationException();
     }
 }

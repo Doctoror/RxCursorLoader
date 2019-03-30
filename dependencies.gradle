@@ -13,7 +13,8 @@ ext {
     androidCompileSdkVersion = 28
 
     //Libraries
-    supportVersion = '27.1.0'
+    androidXAnnotationsVersion = '1.0.2'
+    androidXCursorAdapterVersion = '1.0.0'
     rxJavaVersion = '2.1.12'
     rxAndroidVersion = '2.0.2'
 
@@ -23,19 +24,20 @@ ext {
     robolectricVersion = '3.8'
 
     demoDependencies = [
-            rxJava   : "io.reactivex.rxjava2:rxjava:$rxJavaVersion",
-            rxAndroid: "io.reactivex.rxjava2:rxandroid:$rxAndroidVersion",
-            supportV4: "com.android.support:support-v4:$supportVersion",
+            annotations  : "androidx.annotation:annotation:$androidXAnnotationsVersion",
+            cursorAdapter: "androidx.cursoradapter:cursoradapter:$androidXCursorAdapterVersion",
+            rxJava       : "io.reactivex.rxjava2:rxjava:$rxJavaVersion",
+            rxAndroid    : "io.reactivex.rxjava2:rxandroid:$rxAndroidVersion"
     ]
 
     libraryDependencies = [
-            annotations: "com.android.support:support-annotations:$supportVersion",
+            annotations: "androidx.annotation:annotation:$androidXAnnotationsVersion",
             rxJava     : "io.reactivex.rxjava2:rxjava:$rxJavaVersion"
     ]
 
     libraryTestDependencies = [
-            junit        : "junit:junit:$jUnitVersion",
-            mockito      : "org.mockito:mockito-core:$mockitoVersion",
-            robolectric  : "org.robolectric:robolectric:$robolectricVersion"
+            junit      : "junit:junit:$jUnitVersion",
+            mockito    : "org.mockito:mockito-core:$mockitoVersion",
+            robolectric: "org.robolectric:robolectric:$robolectricVersion"
     ]
 }

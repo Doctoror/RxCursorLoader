@@ -20,8 +20,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Parcel;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -29,6 +27,8 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.observers.BaseTestConsumer;
 import io.reactivex.observers.TestObserver;

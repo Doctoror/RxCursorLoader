@@ -17,12 +17,13 @@ package com.doctoror.rxcursorloader.demo;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.support.annotation.NonNull;
-import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.cursoradapter.widget.CursorAdapter;
 
 /**
  * Created by Yaroslav Mytkalyk on 31.10.16.
